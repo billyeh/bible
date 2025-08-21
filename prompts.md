@@ -1,8 +1,12 @@
 # Prompt 1: Data Model
 I'm trying to write a simple Bible reading app.
+
 I'd like for this Bible reading app to help me read the Bible on a schedule, daily. For now, I'd like to have the ability to set a goal to finish certain books of the Bible by a certain date. The app should then be able to calculate how many verses I'll need to read per day to finish those books by that date. Then, it will show me a notification of the current verse that I need to read. When I click a button on that notification, it will mark that verse as read. The notification will then update to show me the next verse, until I've finished reading that day's verses.
+
 I'll need to come up with a data structure to store my Bible reading schedule(s). I might be doing a few schedules at a time. I also need to store my progress (the verses I've read, and when I read them). 
+
 In the future, I may want to support a different type of schedule. For example, maybe instead of setting a goal to read a certain set of books by a certain date, I want to just read a certain number of verses per day and that's all. We don't have to implement that just yet, but it's something to keep in mind.
+
 Can you help me come up with a data model for this app?
 
 # Response 1
