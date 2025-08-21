@@ -61,34 +61,29 @@ Here's a breakdown to help you choose:
 Isar
 Isar is an extremely fast, easy-to-use, and fully asynchronous NoSQL database designed specifically for Flutter. It's built by the same author as Hive but is considered the more modern and powerful successor.
 
-Pros:
+* Pros:
 
-Blazing Fast: Isar is built on Rust and is one of the fastest databases for mobile.
+  * Blazing Fast: Isar is built on Rust and is one of the fastest databases for mobile.
+  * Asynchronous Operations: It performs all database operations on a separate thread, so you don't have to worry about blocking the UI and causing jank, even with large datasets.
+  * Powerful Queries: It has a rich, expressive query language that makes it easy to filter, sort, and search your data. This would be perfect for finding a user's progress for a specific day or schedule.
+  * Reactive: You can "watch" queries and have your UI automatically update whenever the underlying data changes, which is great for real-time displays.
 
-Asynchronous Operations: It performs all database operations on a separate thread, so you don't have to worry about blocking the UI and causing jank, even with large datasets.
+* Cons:
 
-Powerful Queries: It has a rich, expressive query language that makes it easy to filter, sort, and search your data. This would be perfect for finding a user's progress for a specific day or schedule.
-
-Reactive: You can "watch" queries and have your UI automatically update whenever the underlying data changes, which is great for real-time displays.
-
-Cons:
-
-Code Generation: It requires a code generator (build_runner) to create the necessary boilerplate code for your data models. This adds a small extra step to your development workflow.
+  * Code Generation: It requires a code generator (build_runner) to create the necessary boilerplate code for your data models. This adds a small extra step to your development workflow.
 
 Hive
 Hive is a lightweight and super-fast key-value database. It's known for its simplicity and ease of use, making it a popular choice for developers who need to get started quickly.
 
-Pros:
+* Pros:
 
-Simple API: Hive's API is very easy to learn. You simply open a "box" (which acts like a table or a collection) and then store and retrieve data using keys.
+  * Simple API: Hive's API is very easy to learn. You simply open a "box" (which acts like a table or a collection) and then store and retrieve data using keys.
+  * Minimal Setup: It's very quick to integrate into a project with less boilerplate than Isar.
+  * No Native Dependencies: Because it's written in pure Dart, it works on every platform Flutter supports, including the web.
 
-Minimal Setup: It's very quick to integrate into a project with less boilerplate than Isar.
+* Cons:
 
-No Native Dependencies: Because it's written in pure Dart, it works on every platform Flutter supports, including the web.
-
-Cons:
-
-Limited Querying: Hive is a key-value store, which means it's not as powerful as Isar for complex queries, sorting, or filtering. You would often have to fetch all data and then filter it in memory, which can be inefficient for large datasets.
+  * Limited Querying: Hive is a key-value store, which means it's not as powerful as Isar for complex queries, sorting, or filtering. You would often have to fetch all data and then filter it in memory, which can be inefficient for large datasets.
 
 Recommendation
 Given your data model, which includes a schedules collection and a progress collection, Isar is likely the best choice for you. Its powerful querying capabilities and reactive nature will make it much easier to handle tasks like checking daily progress and updating the UI in real-time. The initial setup with code generation is a minor trade-off for the long-term benefits in performance and flexibility.
