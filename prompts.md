@@ -1,4 +1,4 @@
-# Prompt 1
+# Prompt 1: Data Model
 I'm trying to write a simple Bible reading app.
 I'd like for this Bible reading app to help me read the Bible on a schedule, daily. For now, I'd like to have the ability to set a goal to finish certain books of the Bible by a certain date. The app should then be able to calculate how many verses I'll need to read per day to finish those books by that date. Then, it will show me a notification of the current verse that I need to read. When I click a button on that notification, it will mark that verse as read. The notification will then update to show me the next verse, until I've finished reading that day's verses.
 I'll need to come up with a data structure to store my Bible reading schedule(s). I might be doing a few schedules at a time. I also need to store my progress (the verses I've read, and when I read them). 
@@ -38,3 +38,50 @@ Calculating the Goal: When a user creates a new schedule, the app would calculat
 Tracking Progress: Each time a user clicks the "mark as read" button, a new document is added to the progress collection with the relevant book, chapter, and verse details.
 Checking Daily Progress: To see if a user has met their daily goal, the app would query the progress collection for all documents with the correct scheduleId and a timestamp from the current day. If the number of documents returned is equal to or greater than the dailyVerseGoal, the goal for the day is met.
 Updating the Notification: The app would reference the currentBook, currentChapter, and currentVerse fields on the schedules document to know which verse to display in the notification. After a verse is marked as read, the app would update these three fields to the next sequential verse.
+
+# Prompt 2: Data Model Implementation
+This data model looks great. Say I want to implement this app in Flutter. I'd like for a user to be able to store their schedules and progress locally on the device. We can worry about backing up or syncing the data to the cloud later. What libraries would you recommend for this?
+
+# Response 2
+That's an excellent question! Storing your data locally is a great way to build the app's core functionality before adding more complex cloud syncing features.
+
+For a data model like the one we've outlined, where you have collections of structured objects (Schedule and Progress), I would highly recommend using a NoSQL-style database. The two best options for Flutter are Isar and Hive.
+
+Here's a breakdown to help you choose:
+
+Isar
+Isar is an extremely fast, easy-to-use, and fully asynchronous NoSQL database designed specifically for Flutter. It's built by the same author as Hive but is considered the more modern and powerful successor.
+
+Pros:
+
+Blazing Fast: Isar is built on Rust and is one of the fastest databases for mobile.
+
+Asynchronous Operations: It performs all database operations on a separate thread, so you don't have to worry about blocking the UI and causing jank, even with large datasets.
+
+Powerful Queries: It has a rich, expressive query language that makes it easy to filter, sort, and search your data. This would be perfect for finding a user's progress for a specific day or schedule.
+
+Reactive: You can "watch" queries and have your UI automatically update whenever the underlying data changes, which is great for real-time displays.
+
+Cons:
+
+Code Generation: It requires a code generator (build_runner) to create the necessary boilerplate code for your data models. This adds a small extra step to your development workflow.
+
+Hive
+Hive is a lightweight and super-fast key-value database. It's known for its simplicity and ease of use, making it a popular choice for developers who need to get started quickly.
+
+Pros:
+
+Simple API: Hive's API is very easy to learn. You simply open a "box" (which acts like a table or a collection) and then store and retrieve data using keys.
+
+Minimal Setup: It's very quick to integrate into a project with less boilerplate than Isar.
+
+No Native Dependencies: Because it's written in pure Dart, it works on every platform Flutter supports, including the web.
+
+Cons:
+
+Limited Querying: Hive is a key-value store, which means it's not as powerful as Isar for complex queries, sorting, or filtering. You would often have to fetch all data and then filter it in memory, which can be inefficient for large datasets.
+
+Recommendation
+Given your data model, which includes a schedules collection and a progress collection, Isar is likely the best choice for you. Its powerful querying capabilities and reactive nature will make it much easier to handle tasks like checking daily progress and updating the UI in real-time. The initial setup with code generation is a minor trade-off for the long-term benefits in performance and flexibility.
+
+If you want a more straightforward approach and are comfortable with manual filtering for now, Hive is still an excellent and performant option.
