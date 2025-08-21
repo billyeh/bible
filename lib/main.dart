@@ -5,7 +5,7 @@ import 'package:flutter/rendering.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'bible.dart';
-import 'datePicker.dart';
+import 'date_picker.dart';
 import 'nextButton.dart';
 
 const String BOOKS_SELECTED = "BOOKS_SELECTED";

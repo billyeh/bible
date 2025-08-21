@@ -1,44 +1,11 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:bible_reading/models/verse.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:path/path.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:path_provider/path_provider.dart';
-
-class BibleVerse {
-  int _id;
-  int _book;
-  int _chapter;
-  int _verse;
-  String _text;
-
-  static final columns = ["id", "b", "c", "v", "t"];
-
-  int get id => _id;
-  int get book => _book;
-  int get chapter => _chapter;
-  int get verse => _verse;
-  String get text => _text;
-
-  BibleVerse.fromMap(Map<String, dynamic> map) {
-    this._id = map['id'];
-    this._book = map['b'];
-    this._chapter = map['c'];
-    this._verse = map['v'];
-    this._text = map['t'];
-  }
-
-  Map<String, dynamic> toMap() {
-    var map = new Map<String, dynamic>();
-    map['id'] = _id;
-    map['b'] = _book;
-    map['c'] = _chapter;
-    map['v'] = _verse;
-    map['t'] = _text;
-    return map;
-  }
-}
+import 'package:sqflite/sqflite.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = new DatabaseHelper.internal();
@@ -46,8 +13,9 @@ class DatabaseHelper {
   factory DatabaseHelper() => _instance;
 
   final String tableBible = 't_asv';
+  final String tableBooks = 'key_english';
 
-  static Database _db;
+  static Database? _db;
 
   DatabaseHelper.internal();
 
@@ -69,8 +37,66 @@ class DatabaseHelper {
 
   Future<List<Map>> fetchBooks() async {
     await db;
-    List<Map> results = await _db.rawQuery('SELECT * FROM key_english');
+    List<Map> results = await _db!.rawQuery('SELECT * FROM $tableBooks');
     return results;
+  }
+
+  Future<int> countVerses(List<String> bookNames) async {
+    await db;
+    final bookIds = await _db!.query(
+      tableBooks,
+      columns: ['b'],
+      where: 'n IN (${bookNames.map((e) => '?').join(',')})',
+      whereArgs: bookNames,
+    );
+    final ids = bookIds.map((row) => row['b'] as int).toList();
+    final count = await _db!.rawQuery(
+      'SELECT COUNT(*) FROM $tableBible WHERE b IN (${ids.map((e) => '?').join(',')})',
+      ids,
+    );
+    return Sqflite.firstIntValue(count) ?? 0;
+  }
+
+  Future<Verse?> findFirstVerse(String bookName) async {
+    await db;
+    final bookId = await _db!.query(
+      tableBooks,
+      columns: ['b'],
+      where: 'n = ?',
+      whereArgs: [bookName],
+    );
+    if (bookId.isEmpty) {
+      return null;
+    }
+    final id = bookId.first['b'] as int;
+    final verse = await _db!.query(
+      tableBible,
+      columns: Verse.columns,
+      where: 'b = ?',
+      whereArgs: [id],
+      orderBy: 'id',
+      limit: 1,
+    );
+    if (verse.isEmpty) {
+      return null;
+    }
+    return Verse.fromMap(verse.first);
+  }
+
+  Future<Verse?> findNextVerse(Verse verse) async {
+    await db;
+    final nextVerse = await _db!.query(
+      tableBible,
+      columns: Verse.columns,
+      where: 'id > ?',
+      whereArgs: [verse.id],
+      orderBy: 'id',
+      limit: 1,
+    );
+    if (nextVerse.isEmpty) {
+      return null;
+    }
+    return Verse.fromMap(nextVerse.first);
   }
 
   Future close() async {
