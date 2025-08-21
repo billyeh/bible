@@ -1,0 +1,79 @@
+% sqlite3 bible.db 
+SQLite version 3.43.2 2023-10-10 13:08:14
+Enter ".help" for usage hints.
+sqlite> .tables
+bible_version_key  t_asv              t_kjv              t_ylt            
+cross_reference    t_bbe              t_wbt            
+key_english        t_dby              t_web            
+sqlite> .schema
+CREATE TABLE IF NOT EXISTS "bible_version_key" (
+  "id" integer zerofill NOT NULL,
+  "table" text NOT NULL,
+  "abbreviation" text NOT NULL,
+  "language" text NOT NULL,
+  "version" text NOT NULL,
+  "info_text" text NOT NULL,
+  "info_url" text NOT NULL,
+  "publisher" text NOT NULL,
+  "copyright" text NOT NULL,
+  "copyright_info" text NOT NULL
+);
+CREATE TABLE IF NOT EXISTS "cross_reference" (
+  "vid" integer zerofill NOT NULL,
+  "r" integer NOT NULL,
+  "sv" integer zerofill NOT NULL,
+  "ev" integer zerofill NOT NULL
+);
+CREATE TABLE IF NOT EXISTS "key_english" (
+  "b" integer NOT NULL,
+  "n" text NOT NULL
+);
+CREATE TABLE IF NOT EXISTS "t_asv" (
+  "id" integer zerofill NOT NULL,
+  "b" integer NOT NULL,
+  "c" integer NOT NULL,
+  "v" integer NOT NULL,
+  "t" text NOT NULL
+);
+CREATE TABLE IF NOT EXISTS "t_bbe" (
+  "id" integer zerofill NOT NULL,
+  "b" integer NOT NULL,
+  "c" integer NOT NULL,
+  "v" integer NOT NULL,
+  "t" text NOT NULL
+);
+CREATE TABLE IF NOT EXISTS "t_dby" (
+  "id" integer zerofill NOT NULL,
+  "b" integer NOT NULL,
+  "c" integer NOT NULL,
+  "v" integer NOT NULL,
+  "t" text NOT NULL
+);
+CREATE TABLE IF NOT EXISTS "t_kjv" (
+  "id" integer zerofill NOT NULL,
+  "b" integer NOT NULL,
+  "c" integer NOT NULL,
+  "v" integer NOT NULL,
+  "t" text NOT NULL
+);
+CREATE TABLE IF NOT EXISTS "t_wbt" (
+  "id" integer zerofill NOT NULL,
+  "b" integer NOT NULL,
+  "c" integer NOT NULL,
+  "v" integer NOT NULL,
+  "t" text NOT NULL
+);
+CREATE TABLE IF NOT EXISTS "t_web" (
+  "id" integer zerofill NOT NULL,
+  "b" integer NOT NULL,
+  "c" integer NOT NULL,
+  "v" integer NOT NULL,
+  "t" text NOT NULL
+);
+CREATE TABLE IF NOT EXISTS "t_ylt" (
+  "id" integer zerofill NOT NULL,
+  "b" integer NOT NULL,
+  "c" integer NOT NULL,
+  "v" integer NOT NULL,
+  "t" text NOT NULL
+);
