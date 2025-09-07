@@ -179,7 +179,7 @@ class _MyHomePageState extends State<MyHomePage> {
               // Verses per day
               Row(
                 children: [
-                  const Text("Verses per day:"),
+                  const Text("Verses per day"),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Slider(
@@ -202,19 +202,37 @@ class _MyHomePageState extends State<MyHomePage> {
               Row(
                 children: [
                   Expanded(
-                    child: ListTile(
-                      title: const Text("Start Date"),
-                      subtitle: Text(dateFormat.format(_startDate)),
-                      trailing: const Icon(Icons.calendar_today),
+                    child: InkWell(
                       onTap: _pickStartDate,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text("Start "),
+                          Text(
+                            dateFormat.format(_startDate),
+                            style: TextStyle(
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   Expanded(
-                    child: ListTile(
-                      title: const Text("End Date"),
-                      subtitle: Text(dateFormat.format(_endDate)),
-                      trailing: const Icon(Icons.calendar_today),
+                    child: InkWell(
                       onTap: _pickEndDate,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text("End "),
+                          Text(
+                            dateFormat.format(_endDate),
+                            style: TextStyle(
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
