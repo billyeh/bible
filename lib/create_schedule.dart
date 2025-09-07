@@ -148,8 +148,8 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
                             } else {
                               _selectedBooks.remove(book);
                             }
-                            _updateFromVersesPerDay();
                             _updateTotalVersesSelected();
+                            _updateFromVersesPerDay();
                           });
                         },
                       );
