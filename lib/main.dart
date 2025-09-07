@@ -1,6 +1,6 @@
 import 'package:bible/models/verse.dart';
 import 'package:bible/models/schedule.dart';
-import 'package:bible/schedules.dart';
+import 'package:bible/view_schedules.dart';
 
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
