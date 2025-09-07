@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'bible_data/bible_data.dart';
-import 'package:intl/intl.dart'; // for date formatting
+import 'dart:math';
+import 'package:intl/intl.dart';
 
 void main() {
   runApp(const MyApp());
@@ -49,14 +50,8 @@ class _MyHomePageState extends State<MyHomePage> {
   DateTime _endDate = DateTime.now().add(const Duration(days: 365));
   int _versesPerDay = 10;
 
-  // Selected books
   final Set<String> _selectedBooks = {};
-
-  // TODO: Hook this up to verse counts from your Bible DB
-  int get _totalVersesSelected {
-    // for now, fake it — replace with real lookup later
-    return _selectedBooks.length * 1000;
-  }
+  int _totalVersesSelected = 0;
 
   @override
   void initState() {
@@ -104,6 +99,17 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() => _endDate = picked);
       _updateFromEndDate();
     }
+  }
+
+  Future<void> _updateTotalVersesSelected() async {
+    final bookVerseCounts = await _bibleData.getVersesInBooks(
+      _selectedBooks.toList(),
+    );
+    final total = _bibleData.countTotalVerses(bookVerseCounts);
+
+    setState(() {
+      _totalVersesSelected = total;
+    });
   }
 
   @override
@@ -162,6 +168,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               _selectedBooks.remove(book);
                             }
                             _updateFromVersesPerDay();
+                            _updateTotalVersesSelected();
                           });
                         },
                       );
@@ -185,13 +192,20 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: Slider(
                       value: _versesPerDay.toDouble(),
                       min: 1,
-                      max: _totalVersesSelected.toDouble(),
-                      divisions: 49,
+                      max: max(
+                        _totalVersesSelected.toDouble(),
+                        _versesPerDay.toDouble(),
+                      ),
+                      divisions: _totalVersesSelected > 0
+                          ? _totalVersesSelected
+                          : _versesPerDay,
                       label: _versesPerDay.toString(),
-                      onChanged: (val) {
-                        setState(() => _versesPerDay = val.round());
-                        _updateFromVersesPerDay();
-                      },
+                      onChanged: _totalVersesSelected > 0
+                          ? (val) {
+                              setState(() => _versesPerDay = val.round());
+                              _updateFromVersesPerDay();
+                            }
+                          : null,
                     ),
                   ),
                   SizedBox(width: 40, child: Text("$_versesPerDay")),
