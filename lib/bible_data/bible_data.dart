@@ -7,10 +7,10 @@ import 'package:path/path.dart' as p;
 class BibleData {
   static Database? _database;
 
-  /// Optional injected database, useful for testing.
+  // Optional injected database, useful for testing.
   final Database? db;
 
-  /// Factory constructor for production or test.
+  // Factory constructor for production or test.
   BibleData({this.db});
 
   /// Returns the database instance, creating it if necessary.
@@ -21,7 +21,7 @@ class BibleData {
     return _database!;
   }
 
-  /// Initializes the database by copying it from assets (production only).
+  // Initializes the database by copying it from assets (production only).
   Future<Database> _initDatabase() async {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
     String path = '${documentsDirectory.path}/lib/bible_data/bible.db';
@@ -50,5 +50,42 @@ class BibleData {
     );
 
     return List.generate(maps.length, (i) => maps[i]['n'] as String);
+  }
+
+  // Gets the number of verses for a list of books.
+  //
+  // The returned map contains the book name as the key and the verse count as the value.
+  Future<Map<String, int>> getVersesInBooks(List<String> books) async {
+    if (books.isEmpty) {
+      return {};
+    }
+
+    final db = await database;
+
+    // Use a parameterized query to prevent SQL injection.
+    final String bookNames = books.map((_) => '?').join(',');
+
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT key_english.n, COUNT(t.v) as verse_count
+      FROM key_english
+      JOIN t_asv t ON key_english.b = t.b
+      WHERE key_english.n IN ($bookNames)
+      GROUP BY key_english.n
+      ORDER BY key_english.b ASC
+      ''', books);
+
+    return Map.fromEntries(
+      maps.map(
+        (map) => MapEntry(map['n'] as String, map['verse_count'] as int),
+      ),
+    );
+  }
+
+  // Counts the total number of verses from a map of book verse counts.
+  int countTotalVerses(Map<String, int> bookVerseCounts) {
+    if (bookVerseCounts.isEmpty) {
+      return 0;
+    }
+    return bookVerseCounts.values.reduce((sum, count) => sum + count);
   }
 }
