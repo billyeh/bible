@@ -88,4 +88,22 @@ class BibleData {
     }
     return bookVerseCounts.values.reduce((sum, count) => sum + count);
   }
+
+  Future<List<Map<String, dynamic>>> getVerses(List<String> books) async {
+    if (books.isEmpty) return [];
+
+    final db = await database;
+    final placeholders = books.map((_) => '?').join(',');
+
+    return await db.rawQuery('''
+    SELECT key_english.n as book,
+           t.c as chapter,
+           t.v as verse,
+           t.t as text
+    FROM key_english
+    JOIN t_asv t ON key_english.b = t.b
+    WHERE key_english.n IN ($placeholders)
+    ORDER BY key_english.b, t.c, t.v
+  ''', books);
+  }
 }

@@ -86,4 +86,91 @@ void main() {
     final totalSingle = bibleData.countTotalVerses(singleEntryMap);
     expect(totalSingle, 5);
   });
+
+  test('getVerses returns all verses in order for the given books', () async {
+    final db = await openDatabase(
+      inMemoryDatabasePath,
+      version: 1,
+      onCreate: (db, version) async {
+        // Create tables
+        await db.execute('CREATE TABLE key_english (b INTEGER, n TEXT)');
+        await db.execute(
+          'CREATE TABLE t_asv (id INTEGER, b INTEGER, c INTEGER, v INTEGER, t TEXT)',
+        );
+
+        // Insert books
+        await db.insert('key_english', {'b': 1, 'n': 'Genesis'});
+        await db.insert('key_english', {'b': 2, 'n': 'Exodus'});
+
+        // Insert verses for Genesis (b=1)
+        await db.insert('t_asv', {
+          'id': 1,
+          'b': 1,
+          'c': 1,
+          'v': 1,
+          't': 'In the beginning...',
+        });
+        await db.insert('t_asv', {
+          'id': 2,
+          'b': 1,
+          'c': 1,
+          'v': 2,
+          't': 'And the earth was...',
+        });
+        await db.insert('t_asv', {
+          'id': 3,
+          'b': 1,
+          'c': 2,
+          'v': 1,
+          't': 'Thus the heavens...',
+        });
+
+        // Insert verses for Exodus (b=2)
+        await db.insert('t_asv', {
+          'id': 4,
+          'b': 2,
+          'c': 1,
+          'v': 1,
+          't': 'Now these are the names...',
+        });
+        await db.insert('t_asv', {
+          'id': 5,
+          'b': 2,
+          'c': 1,
+          'v': 2,
+          't': 'And Moses said...',
+        });
+      },
+    );
+
+    final bibleData = BibleData(db: db);
+
+    // Query both books
+    final verses = await bibleData.getVerses(['Genesis', 'Exodus']);
+
+    expect(verses.length, 5);
+
+    // Check the order and content
+    expect(verses[0]['book'], 'Genesis');
+    expect(verses[0]['chapter'], 1);
+    expect(verses[0]['verse'], 1);
+    expect(verses[0]['text'], 'In the beginning...');
+
+    expect(verses[2]['book'], 'Genesis');
+    expect(verses[2]['chapter'], 2);
+    expect(verses[2]['verse'], 1);
+    expect(verses[2]['text'], 'Thus the heavens...');
+
+    expect(verses[3]['book'], 'Exodus');
+    expect(verses[3]['chapter'], 1);
+    expect(verses[3]['verse'], 1);
+    expect(verses[3]['text'], 'Now these are the names...');
+
+    expect(verses[4]['book'], 'Exodus');
+    expect(verses[4]['chapter'], 1);
+    expect(verses[4]['verse'], 2);
+    expect(verses[4]['text'], 'And Moses said...');
+
+    await db.close();
+  });
 }
