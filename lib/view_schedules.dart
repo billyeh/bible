@@ -1,5 +1,7 @@
 import 'package:bible/main.dart';
 import 'package:bible/create_schedule.dart';
+import 'package:bible/reading.dart';
+import 'package:bible/bible_data/bible_data.dart';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -89,6 +91,15 @@ class _SchedulesPageState extends State<SchedulesPage> {
                       "${dateFormat.format(s.startDate)} → ${dateFormat.format(s.endDate)}\n"
                       "Books: ${s.booksToRead.join(', ')}",
                     ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              ReadingPage(schedule: s, bible: BibleData()),
+                        ),
+                      );
+                    },
                   ),
                 ),
               );

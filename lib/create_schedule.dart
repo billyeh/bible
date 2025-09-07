@@ -264,11 +264,12 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text("Schedule created!")),
                         );
-                        final schedule = Schedule()
-                          ..name = _scheduleName
-                          ..startDate = _startDate
-                          ..endDate = _endDate
-                          ..booksToRead = _selectedBooks.toList();
+                        final schedule = Schedule.create(
+                          name: _scheduleName,
+                          startDate: _startDate,
+                          endDate: _endDate,
+                          booksToRead: _selectedBooks.toList(),
+                        );
                         await isar.writeTxn(() async {
                           await isar.schedules.put(schedule);
                         });

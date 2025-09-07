@@ -19,6 +19,24 @@ class Schedule {
 
   // You might use this later to track progress
   final versesRead = IsarLinks<Verse>();
+
+  Schedule();
+
+  static DateTime _normalize(DateTime dt) =>
+      DateTime(dt.year, dt.month, dt.day);
+
+  factory Schedule.create({
+    required String name,
+    required DateTime startDate,
+    required DateTime endDate,
+    required List<String> booksToRead,
+  }) {
+    return Schedule()
+      ..name = name
+      ..startDate = _normalize(startDate)
+      ..endDate = _normalize(endDate)
+      ..booksToRead = booksToRead;
+  }
 }
 
 extension ScheduleExtensions on Schedule {
@@ -39,12 +57,14 @@ extension ScheduleExtensions on Schedule {
     BibleData bible,
     DateTime date,
   ) async {
-    if (date.isBefore(startDate) || date.isAfter(endDate)) {
+    // Get the requested date, not including the time portion.
+    final DateTime requestedDate = Schedule._normalize(date);
+    if (requestedDate.isBefore(startDate) || requestedDate.isAfter(endDate)) {
       return [];
     }
 
     final versesPerDay = await getVersesPerDay(bible);
-    final dayIndex = date.difference(startDate).inDays;
+    final dayIndex = requestedDate.difference(startDate).inDays;
     final offset = dayIndex * versesPerDay;
 
     final allVerses = await bible.getVerses(booksToRead);
