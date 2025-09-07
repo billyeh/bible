@@ -74,7 +74,9 @@ class _ReadingPageState extends State<ReadingPage> {
           final verses = snapshot.data ?? [];
           if (verses.isEmpty) {
             return Center(
-              child: Text('No reading for ${dateFormat.format(_selectedDate)}'),
+              child: Text(
+                'No reading for ${dateFormat.format(_selectedDate)} 🎉',
+              ),
             );
           }
 
