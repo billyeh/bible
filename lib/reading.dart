@@ -1,8 +1,11 @@
 import 'package:bible/models/schedule.dart';
+import 'package:bible/models/verse.dart';
 import 'package:bible/bible_data/bible_data.dart';
+import 'package:bible/main.dart';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:isar/isar.dart';
 
 class ReadingPage extends StatefulWidget {
   final Schedule schedule;
@@ -15,36 +18,69 @@ class ReadingPage extends StatefulWidget {
 }
 
 class _ReadingPageState extends State<ReadingPage> {
-  late Future<List<Map<String, dynamic>>> _versesFuture;
-
-  DateTime _selectedDate = DateTime.now();
+  DateTime selectedDate = DateTime.now();
+  List<Map<String, dynamic>> verses = [];
 
   @override
   void initState() {
     super.initState();
-    _loadVerses();
+    _loadVersesForDate(selectedDate);
   }
 
-  void _loadVerses() {
-    _versesFuture = widget.schedule.getVersesForScheduleDate(
+  Future<void> _loadVersesForDate(DateTime date) async {
+    final v = await widget.schedule.getVersesForScheduleDate(
       widget.bible,
-      _selectedDate,
+      date,
     );
+    setState(() {
+      selectedDate = date;
+      verses = v;
+    });
   }
 
-  void _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: widget.schedule.startDate,
-      lastDate: widget.schedule.endDate,
-    );
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-        _loadVerses();
+  Future<void> _toggleVerse(Map<String, dynamic> verseRow) async {
+    final book = verseRow['book'] as String;
+    final chapter = verseRow['chapter'] as int;
+    final verseNum = verseRow['verse'] as int;
+
+    Verse? verseRef = await isar.verses
+        .filter()
+        .bookEqualTo(book)
+        .chapterEqualTo(chapter)
+        .verseEqualTo(verseNum)
+        .findFirst();
+    if (verseRef == null) {
+      verseRef = Verse()
+        ..book = book
+        ..chapter = chapter
+        ..verse = verseNum;
+      await isar.writeTxn(() async {
+        await isar.verses.put(verseRef!);
       });
     }
+
+    final isRead = widget.schedule.versesRead.contains(verseRef);
+
+    await isar.writeTxn(() async {
+      if (isRead) {
+        widget.schedule.versesRead.remove(verseRef);
+      } else if (verseRef != null) {
+        widget.schedule.versesRead.add(verseRef);
+      }
+      await widget.schedule.versesRead.save();
+    });
+
+    setState(() {}); // Refresh UI
+  }
+
+  bool _isVerseRead(Map<String, dynamic> verseRow) {
+    final book = verseRow['book'] as String;
+    final chapter = verseRow['chapter'] as int;
+    final verseNum = verseRow['verse'] as int;
+
+    return widget.schedule.versesRead.any(
+      (v) => v.book == book && v.chapter == chapter && v.verse == verseNum,
+    );
   }
 
   @override
@@ -53,48 +89,62 @@ class _ReadingPageState extends State<ReadingPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.schedule.name),
+        title: Text("Reading for ${dateFormat.format(selectedDate)}"),
         actions: [
           IconButton(
             icon: const Icon(Icons.calendar_today),
-            onPressed: _pickDate,
+            onPressed: () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: selectedDate,
+                firstDate: widget.schedule.startDate,
+                lastDate: widget.schedule.endDate,
+              );
+              if (picked != null) {
+                _loadVersesForDate(picked);
+              }
+            },
             tooltip: 'Select date',
           ),
         ],
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _versesFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-          final verses = snapshot.data ?? [];
-          if (verses.isEmpty) {
-            return Center(
-              child: Text(
-                'No reading for ${dateFormat.format(_selectedDate)} 🎉',
-              ),
-            );
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(8),
-            itemCount: verses.length,
-            itemBuilder: (context, index) {
-              final verse = verses[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Text(
-                  "${verse['book']} ${verse['chapter']}:${verse['verse']} ${verse['text']}",
-                  style: const TextStyle(fontSize: 16),
-                ),
-              );
-            },
-          );
-        },
+      body: Column(
+        children: [
+          // Verse list
+          Expanded(
+            child: verses.isEmpty
+                ? Center(
+                    child: Text(
+                      'No reading for ${dateFormat.format(selectedDate)} 🎉',
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: verses.length,
+                    itemBuilder: (context, index) {
+                      final v = verses[index];
+                      final isRead = _isVerseRead(v);
+                      return ListTile(
+                        title: Text(
+                          "${v['book']} ${v['chapter']}:${v['verse']} ${v['text']}",
+                          style: TextStyle(
+                            decoration: isRead
+                                ? TextDecoration.lineThrough
+                                : null,
+                            color: isRead ? Colors.grey : null,
+                          ),
+                        ),
+                        trailing: Icon(
+                          isRead
+                              ? Icons.check_circle
+                              : Icons.radio_button_unchecked,
+                          color: isRead ? Colors.green : null,
+                        ),
+                        onTap: () => _toggleVerse(v),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }
