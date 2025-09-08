@@ -7,7 +7,7 @@ part 'schedule.g.dart';
 
 @collection
 class Schedule {
-  Id id = Isar.autoIncrement; // auto increment id
+  Id id = Isar.autoIncrement;
 
   late String name;
 
@@ -17,7 +17,6 @@ class Schedule {
 
   late List<String> booksToRead;
 
-  // You might use this later to track progress
   final versesRead = IsarLinks<Verse>();
 
   Schedule();
