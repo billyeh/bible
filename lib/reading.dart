@@ -17,14 +17,62 @@ class ReadingPage extends StatefulWidget {
   State<ReadingPage> createState() => _ReadingPageState();
 }
 
-class _ReadingPageState extends State<ReadingPage> {
+class _ReadingPageState extends State<ReadingPage>
+    with SingleTickerProviderStateMixin {
   DateTime selectedDate = DateTime.now();
   List<Map<String, dynamic>> verses = [];
+  late final AnimationController _bounceController;
+  late final Animation<double> _bounceAnimation;
 
   @override
   void initState() {
     super.initState();
+
+    _bounceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    _bounceAnimation =
+        TweenSequence([
+          TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.2), weight: 50),
+          TweenSequenceItem(tween: Tween(begin: 1.2, end: 1.0), weight: 50),
+        ]).animate(
+          CurvedAnimation(parent: _bounceController, curve: Curves.easeOut),
+        );
+
     _loadVersesForDate(selectedDate);
+  }
+
+  @override
+  void dispose() {
+    _bounceController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _checkOrUncheckAll() async {
+    final wasAllRead = _allVersesRead();
+    if (wasAllRead) {
+      // Uncheck all
+      for (final v in verses) {
+        if (_isVerseRead(v)) {
+          await _toggleVerse(v);
+        }
+      }
+    } else {
+      // Check all
+      for (final v in verses) {
+        if (!_isVerseRead(v)) {
+          await _toggleVerse(v);
+        }
+      }
+
+      // Play bounce only if all are now read
+      if (_allVersesRead()) {
+        _bounceController.forward(from: 0);
+      }
+    }
+    setState(() {});
   }
 
   Future<void> _loadVersesForDate(DateTime date) async {
@@ -81,6 +129,10 @@ class _ReadingPageState extends State<ReadingPage> {
     return widget.schedule.versesRead.any(
       (v) => v.book == book && v.chapter == chapter && v.verse == verseNum,
     );
+  }
+
+  bool _allVersesRead() {
+    return verses.isNotEmpty && verses.every((v) => _isVerseRead(v));
   }
 
   @override
@@ -145,6 +197,57 @@ class _ReadingPageState extends State<ReadingPage> {
                   ),
           ),
         ],
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            IconButton.filled(
+              onPressed: widget.schedule.isAfterStartDate(selectedDate)
+                  ? () => _loadVersesForDate(
+                      selectedDate.subtract(const Duration(days: 1)),
+                    )
+                  : null,
+              icon: const Icon(Icons.arrow_back),
+              tooltip: "Previous Day",
+            ),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: ScaleTransition(scale: animation, child: child),
+              ),
+              child: ScaleTransition(
+                key: ValueKey(_allVersesRead()),
+                scale: _bounceAnimation,
+                child: FloatingActionButton(
+                  key: ValueKey(_allVersesRead()),
+                  onPressed: _checkOrUncheckAll,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 8,
+                  highlightElevation: 12,
+
+                  tooltip: _allVersesRead() ? "Uncheck All" : "Check All",
+                  child: Icon(
+                    _allVersesRead() ? Icons.clear_all : Icons.done_all,
+                    size: 30,
+                  ),
+                ),
+              ),
+            ),
+            IconButton.filled(
+              onPressed: widget.schedule.isBeforeEndDate(selectedDate)
+                  ? () => _loadVersesForDate(
+                      selectedDate.add(const Duration(days: 1)),
+                    )
+                  : null,
+              icon: const Icon(Icons.arrow_forward),
+              tooltip: "Next Day",
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -71,4 +71,12 @@ extension ScheduleExtensions on Schedule {
 
     return allVerses.skip(offset).take(versesPerDay).toList();
   }
+
+  bool isAfterStartDate(DateTime date) {
+    return Schedule._normalize(date).isAfter(startDate);
+  }
+
+  bool isBeforeEndDate(DateTime date) {
+    return Schedule._normalize(date).isBefore(endDate);
+  }
 }
