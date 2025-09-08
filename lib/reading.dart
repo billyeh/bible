@@ -41,6 +41,23 @@ class _ReadingPageState extends State<ReadingPage>
           CurvedAnimation(parent: _bounceController, curve: Curves.easeOut),
         );
 
+    // Ensure selectedDate is within schedule.
+    if (!widget.schedule.isAfterOrOnStartDate(DateTime.now())) {
+      selectedDate = widget.schedule.startDate;
+      // Delay SnackBar to show after build.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Your schedule ${widget.schedule.name} hasn\'t started! Jumped to the first day of this schedule.',
+            ),
+          ),
+        );
+      });
+    } else {
+      selectedDate = DateTime.now();
+    }
+
     _loadVersesForDate(selectedDate);
   }
 

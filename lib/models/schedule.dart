@@ -75,6 +75,11 @@ extension ScheduleExtensions on Schedule {
     return Schedule._normalize(date).isAfter(startDate);
   }
 
+  bool isAfterOrOnStartDate(DateTime date) {
+    return Schedule._normalize(date).isAfter(startDate) ||
+        Schedule._normalize(date).isAtSameMomentAs(startDate);
+  }
+
   bool isBeforeEndDate(DateTime date) {
     return Schedule._normalize(date).isBefore(endDate);
   }

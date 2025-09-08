@@ -60,11 +60,17 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
     final picked = await showDatePicker(
       context: context,
       initialDate: _startDate,
-      firstDate: DateTime(2000),
+      firstDate: DateTime.now(),
       lastDate: DateTime(2100),
     );
     if (picked != null) {
-      setState(() => _startDate = picked);
+      setState(() {
+        _startDate = picked;
+        // Make sure end date is not before start date.
+        if (_endDate.isBefore(_startDate)) {
+          _endDate = _startDate.add(const Duration(days: 1));
+        }
+      });
       _updateFromVersesPerDay();
     }
   }
