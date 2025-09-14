@@ -71,6 +71,35 @@ extension ScheduleExtensions on Schedule {
     return allVerses.skip(offset).take(versesPerDay).toList();
   }
 
+  Future<List<Verse>> getAllVerses(BibleData bible) async {
+    final verseMaps = await bible.getVerses(booksToRead);
+    return verseMaps.map((map) {
+      return Verse()
+        ..book = map['book']
+        ..chapter = map['chapter']
+        ..verse = map['verse'];
+    }).toList();
+  }
+
+  Future<bool> isScheduleFinished(BibleData bible) async {
+    await versesRead.load();
+    final allVerses = await getAllVerses(bible);
+
+    if (allVerses.isEmpty && versesRead.isEmpty) {
+      return true;
+    }
+    if (allVerses.length != versesRead.length) {
+      return false;
+    }
+
+    final allVersesSet =
+        allVerses.map((v) => '${v.book}-${v.chapter}-${v.verse}').toSet();
+    final versesReadSet =
+        versesRead.map((v) => '${v.book}-${v.chapter}-${v.verse}').toSet();
+
+    return allVersesSet.difference(versesReadSet).isEmpty;
+  }
+
   bool isAfterStartDate(DateTime date) {
     return Schedule._normalize(date).isAfter(startDate);
   }

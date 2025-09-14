@@ -163,6 +163,101 @@ void main() {
         expect(outOfRange, isEmpty);
       },
     );
+
+    test('getAllVerses returns all verses for the schedule', () async {
+      final schedule = Schedule()
+        ..name = 'Test Schedule'
+        ..booksToRead = ['Book1', 'Book2'];
+
+      final mockBible = MockBibleData(
+        bookVerseCounts: {}, // Not used in this test
+        bookVerses: {
+          'Book1': [
+            {'book': 'Book1', 'chapter': 1, 'verse': 1, 'text': '...'},
+            {'book': 'Book1', 'chapter': 1, 'verse': 2, 'text': '...'},
+          ],
+          'Book2': [
+            {'book': 'Book2', 'chapter': 1, 'verse': 1, 'text': '...'},
+          ],
+        },
+      );
+
+      final allVerses = await schedule.getAllVerses(mockBible);
+
+      expect(allVerses.length, 3);
+      expect(allVerses[0].book, 'Book1');
+      expect(allVerses[0].chapter, 1);
+      expect(allVerses[0].verse, 1);
+      expect(allVerses[2].book, 'Book2');
+    });
+
+    test('isScheduleFinished returns true when all verses have been read',
+        () async {
+      final schedule = Schedule()
+        ..name = 'Test Schedule'
+        ..booksToRead = ['Book1'];
+
+      final mockBible = MockBibleData(
+        bookVerseCounts: {}, // Not used
+        bookVerses: {
+          'Book1': [
+            {'book': 'Book1', 'chapter': 1, 'verse': 1, 'text': '...'},
+            {'book': 'Book1', 'chapter': 1, 'verse': 2, 'text': '...'},
+          ],
+        },
+      );
+
+      // Create Verse objects and add them to versesRead
+      final verse1 = Verse()
+        ..book = 'Book1'
+        ..chapter = 1
+        ..verse = 1;
+      final verse2 = Verse()
+        ..book = 'Book1'
+        ..chapter = 1
+        ..verse = 2;
+
+      await isar.writeTxn(() async {
+        await isar.verses.putAll([verse1, verse2]);
+        schedule.versesRead.add(verse1);
+        schedule.versesRead.add(verse2);
+        await schedule.versesRead.save();
+      });
+
+      final isFinished = await schedule.isScheduleFinished(mockBible);
+      expect(isFinished, isTrue);
+    });
+
+    test('isScheduleFinished returns false when not all verses have been read',
+        () async {
+      final schedule = Schedule()
+        ..name = 'Test Schedule'
+        ..booksToRead = ['Book1'];
+
+      final mockBible = MockBibleData(
+        bookVerseCounts: {}, // Not used
+        bookVerses: {
+          'Book1': [
+            {'book': 'Book1', 'chapter': 1, 'verse': 1, 'text': '...'},
+            {'book': 'Book1', 'chapter': 1, 'verse': 2, 'text': '...'},
+          ],
+        },
+      );
+
+      // Only add one verse as read
+      final verse1 = Verse()
+        ..book = 'Book1'
+        ..chapter = 1
+        ..verse = 1;
+      await isar.writeTxn(() async {
+        await isar.verses.put(verse1);
+        schedule.versesRead.add(verse1);
+        await schedule.versesRead.save();
+      });
+
+      final isFinished = await schedule.isScheduleFinished(mockBible);
+      expect(isFinished, isFalse);
+    });
   });
 
   test(
