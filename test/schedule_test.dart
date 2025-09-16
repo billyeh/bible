@@ -191,73 +191,83 @@ void main() {
       expect(allVerses[2].book, 'Book2');
     });
 
-    test('isScheduleFinished returns true when all verses have been read',
-        () async {
-      final schedule = Schedule()
-        ..name = 'Test Schedule'
-        ..booksToRead = ['Book1'];
+    test(
+      'isScheduleFinished returns true when all verses have been read',
+      () async {
+        final schedule = Schedule()
+          ..name = 'Test Schedule'
+          ..startDate = DateTime(2024, 1, 1)
+          ..endDate = DateTime(2024, 1, 3)
+          ..booksToRead = ['Book1'];
 
-      final mockBible = MockBibleData(
-        bookVerseCounts: {}, // Not used
-        bookVerses: {
-          'Book1': [
-            {'book': 'Book1', 'chapter': 1, 'verse': 1, 'text': '...'},
-            {'book': 'Book1', 'chapter': 1, 'verse': 2, 'text': '...'},
-          ],
-        },
-      );
+        final mockBible = MockBibleData(
+          bookVerseCounts: {}, // Not used
+          bookVerses: {
+            'Book1': [
+              {'book': 'Book1', 'chapter': 1, 'verse': 1, 'text': '...'},
+              {'book': 'Book1', 'chapter': 1, 'verse': 2, 'text': '...'},
+            ],
+          },
+        );
 
-      // Create Verse objects and add them to versesRead
-      final verse1 = Verse()
-        ..book = 'Book1'
-        ..chapter = 1
-        ..verse = 1;
-      final verse2 = Verse()
-        ..book = 'Book1'
-        ..chapter = 1
-        ..verse = 2;
+        // Create Verse objects and add them to versesRead
+        final verse1 = Verse()
+          ..book = 'Book1'
+          ..chapter = 1
+          ..verse = 1;
+        final verse2 = Verse()
+          ..book = 'Book1'
+          ..chapter = 1
+          ..verse = 2;
 
-      await isar.writeTxn(() async {
-        await isar.verses.putAll([verse1, verse2]);
-        schedule.versesRead.add(verse1);
-        schedule.versesRead.add(verse2);
-        await schedule.versesRead.save();
-      });
+        await isar.writeTxn(() async {
+          await isar.verses.putAll([verse1, verse2]);
+          await isar.schedules.put(schedule);
+          schedule.versesRead.add(verse1);
+          schedule.versesRead.add(verse2);
+          await schedule.versesRead.save();
+        });
 
-      final isFinished = await schedule.isScheduleFinished(mockBible);
-      expect(isFinished, isTrue);
-    });
+        final isFinished = await schedule.isScheduleFinished(mockBible);
+        expect(isFinished, isTrue);
+      },
+    );
 
-    test('isScheduleFinished returns false when not all verses have been read',
-        () async {
-      final schedule = Schedule()
-        ..name = 'Test Schedule'
-        ..booksToRead = ['Book1'];
+    test(
+      'isScheduleFinished returns false when not all verses have been read',
+      () async {
+        final schedule = Schedule()
+          ..name = 'Test Schedule'
+          ..startDate = DateTime(2024, 1, 1)
+          ..endDate = DateTime(2024, 1, 3)
+          ..booksToRead = ['Book1'];
 
-      final mockBible = MockBibleData(
-        bookVerseCounts: {}, // Not used
-        bookVerses: {
-          'Book1': [
-            {'book': 'Book1', 'chapter': 1, 'verse': 1, 'text': '...'},
-            {'book': 'Book1', 'chapter': 1, 'verse': 2, 'text': '...'},
-          ],
-        },
-      );
+        final mockBible = MockBibleData(
+          bookVerseCounts: {}, // Not used
+          bookVerses: {
+            'Book1': [
+              {'book': 'Book1', 'chapter': 1, 'verse': 1, 'text': '...'},
+              {'book': 'Book1', 'chapter': 1, 'verse': 2, 'text': '...'},
+            ],
+          },
+        );
 
-      // Only add one verse as read
-      final verse1 = Verse()
-        ..book = 'Book1'
-        ..chapter = 1
-        ..verse = 1;
-      await isar.writeTxn(() async {
-        await isar.verses.put(verse1);
-        schedule.versesRead.add(verse1);
-        await schedule.versesRead.save();
-      });
+        // Only add one verse as read
+        final verse1 = Verse()
+          ..book = 'Book1'
+          ..chapter = 1
+          ..verse = 1;
+        await isar.writeTxn(() async {
+          await isar.verses.put(verse1);
+          await isar.schedules.put(schedule);
+          schedule.versesRead.add(verse1);
+          await schedule.versesRead.save();
+        });
 
-      final isFinished = await schedule.isScheduleFinished(mockBible);
-      expect(isFinished, isFalse);
-    });
+        final isFinished = await schedule.isScheduleFinished(mockBible);
+        expect(isFinished, isFalse);
+      },
+    );
   });
 
   test(
