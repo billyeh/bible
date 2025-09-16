@@ -97,6 +97,7 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
     setState(() {
       _totalVersesSelected = total;
     });
+    _updateFromVersesPerDay();
   }
 
   @override
