@@ -85,21 +85,77 @@ class _SchedulesPageState extends State<SchedulesPage> {
                 },
                 child: Card(
                   margin: const EdgeInsets.all(8),
-                  child: ListTile(
-                    title: Text(s.name),
-                    subtitle: Text(
-                      "${dateFormat.format(s.startDate)} → ${dateFormat.format(s.endDate)}\n"
-                      "Books: ${s.booksToRead.join(', ')}",
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              ReadingPage(schedule: s, bible: BibleData()),
+                  child: Column(
+                    children: [
+                      ListTile(
+                        title: Text(s.name),
+                        subtitle: Text(
+                          "${dateFormat.format(s.startDate)} → ${dateFormat.format(s.endDate)}\n"
+                          "Books: ${s.booksToRead.join(', ')}",
                         ),
-                      );
-                    },
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  ReadingPage(schedule: s, bible: BibleData()),
+                            ),
+                          );
+                        },
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                        child: FutureBuilder<double>(
+                          future: s.getReadingProgress(BibleData()),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const LinearProgressIndicator();
+                            }
+
+                            final readingProgress = snapshot.data ?? 0.0;
+                            final timeProgress = s.getTimeProgress(DateTime.now());
+
+                            return LayoutBuilder(
+                              builder: (context, constraints) {
+                                return ClipRRect(
+                                  borderRadius: BorderRadius.circular(5),
+                                  child: Stack(
+                                    children: [
+                                      // Reading progress
+                                      Container(
+                                        height: 10,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade300,
+                                        ),
+                                      ),
+                                      Container(
+                                        height: 10,
+                                        width: constraints.maxWidth * readingProgress,
+                                        decoration: BoxDecoration(
+                                          color: Colors.green,
+                                        ),
+                                      ),
+
+                                      // Time indicator
+                                      Positioned(
+                                        top: -2.5,
+                                        left: constraints.maxWidth * timeProgress - 1,
+                                        child: Container(
+                                          height: 15,
+                                          width: 2,
+                                          color: Colors.black,
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      )
+                    ],
                   ),
                 ),
               );
