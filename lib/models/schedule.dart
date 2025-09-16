@@ -112,4 +112,34 @@ extension ScheduleExtensions on Schedule {
   bool isBeforeEndDate(DateTime date) {
     return Schedule._normalize(date).isBefore(endDate);
   }
+
+  double getTimeProgress(DateTime now) {
+    final today = Schedule._normalize(now);
+
+    if (today.isBefore(startDate)) {
+      return 0.0;
+    }
+    if (today.isAfter(endDate) || today.isAtSameMomentAs(endDate)) {
+      return 1.0;
+    }
+
+    final total = endDate.difference(startDate).inDays;
+    if (total <= 0) {
+      return 1.0;
+    }
+    final elapsed = today.difference(startDate).inDays;
+    return elapsed / total;
+  }
+
+  Future<double> getReadingProgress(BibleData bible) async {
+    await versesRead.load();
+    final verseCounts = await bible.getVersesInBooks(booksToRead);
+    final totalVerses = bible.countTotalVerses(verseCounts);
+
+    if (totalVerses == 0) {
+      return 1.0;
+    }
+
+    return versesRead.length / totalVerses;
+  }
 }

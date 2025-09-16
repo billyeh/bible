@@ -345,4 +345,119 @@ void main() {
       expect(day3[1]['text'], 'B2 V6');
     },
   );
+
+  group('getTimeProgress', () {
+    test('is 0 before start date', () {
+      final schedule = Schedule()
+        ..startDate = DateTime(2024, 1, 10)
+        ..endDate = DateTime(2024, 1, 20);
+      final progress = schedule.getTimeProgress(DateTime(2024, 1, 5));
+      expect(progress, 0.0);
+    });
+
+    test('is ~0.5 in the middle', () {
+      final schedule = Schedule()
+        ..startDate = DateTime(2024, 1, 10)
+        ..endDate = DateTime(2024, 1, 20);
+      // Day 5 of a 10 day schedule.
+      final progress = schedule.getTimeProgress(DateTime(2024, 1, 15));
+      expect(progress, 0.5);
+    });
+
+    test('is 1.0 on the end date', () {
+      final schedule = Schedule()
+        ..startDate = DateTime(2024, 1, 10)
+        ..endDate = DateTime(2024, 1, 20);
+      final progress = schedule.getTimeProgress(DateTime(2024, 1, 20));
+      expect(progress, 1.0);
+    });
+
+    test('is 1.0 after the end date', () {
+      final schedule = Schedule()
+        ..startDate = DateTime(2024, 1, 10)
+        ..endDate = DateTime(2024, 1, 20);
+      final progress = schedule.getTimeProgress(DateTime(2024, 1, 25));
+      expect(progress, 1.0);
+    });
+
+    test('handles single-day schedule', () {
+      final schedule = Schedule()
+        ..startDate = DateTime(2024, 1, 10)
+        ..endDate = DateTime(2024, 1, 10);
+      final progress = schedule.getTimeProgress(DateTime(2024, 1, 10));
+      expect(progress, 1.0);
+    });
+  });
+
+  group('getReadingProgress', () {
+    final mockBible = MockBibleData(
+      bookVerseCounts: {'Book1': 10},
+      bookVerses: {
+        'Book1': List.generate(
+          10,
+          (i) => {
+            'book': 'Book1',
+            'chapter': 1,
+            'verse': i + 1,
+            'text': 'Verse ${i + 1}',
+          },
+        ),
+      },
+    );
+
+    test('is 0.0 when no verses are read', () async {
+      final schedule = Schedule()..booksToRead = ['Book1'];
+
+      final progress = await schedule.getReadingProgress(mockBible);
+      expect(progress, 0.0);
+    });
+
+    test('is ~0.5 when half the verses are read', () async {
+      final schedule = Schedule()..booksToRead = ['Book1'];
+
+      // Mark 5 out of 10 verses as read
+      final verses = List.generate(5, (i) {
+        return Verse()
+          ..book = 'Book1'
+          ..chapter = 1
+          ..verse = i + 1;
+      });
+
+      await isar.writeTxn(() async {
+        await isar.verses.putAll(verses);
+        schedule.versesRead.addAll(verses);
+        await schedule.versesRead.save();
+      });
+
+      final progress = await schedule.getReadingProgress(mockBible);
+      expect(progress, 0.5);
+    });
+
+    test('is 1.0 when all verses are read', () async {
+      final schedule = Schedule()..booksToRead = ['Book1'];
+
+      // Mark all 10 verses as read
+      final verses = List.generate(10, (i) {
+        return Verse()
+          ..book = 'Book1'
+          ..chapter = 1
+          ..verse = i + 1;
+      });
+      await isar.writeTxn(() async {
+        await isar.verses.putAll(verses);
+        schedule.versesRead.addAll(verses);
+        await schedule.versesRead.save();
+      });
+
+      final progress = await schedule.getReadingProgress(mockBible);
+      expect(progress, 1.0);
+    });
+
+    test('is 1.0 for a schedule with no books', () async {
+      final schedule = Schedule()..booksToRead = [];
+
+      final progress = await schedule.getReadingProgress(mockBible);
+      expect(progress, 1.0);
+    });
+  });
 }
