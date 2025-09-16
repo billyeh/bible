@@ -406,14 +406,28 @@ void main() {
     );
 
     test('is 0.0 when no verses are read', () async {
-      final schedule = Schedule()..booksToRead = ['Book1'];
+      final schedule = Schedule()
+        ..name = 'Test'
+        ..startDate = DateTime(2024, 1, 1)
+        ..endDate = DateTime(2024, 1, 3)
+        ..booksToRead = ['Book1'];
+      await isar.writeTxn(() async {
+        isar.schedules.put(schedule);
+      });
 
       final progress = await schedule.getReadingProgress(mockBible);
       expect(progress, 0.0);
     });
 
     test('is ~0.5 when half the verses are read', () async {
-      final schedule = Schedule()..booksToRead = ['Book1'];
+      final schedule = Schedule()
+        ..name = 'Test'
+        ..startDate = DateTime(2024, 1, 1)
+        ..endDate = DateTime(2024, 1, 3)
+        ..booksToRead = ['Book1'];
+      await isar.writeTxn(() async {
+        isar.schedules.put(schedule);
+      });
 
       // Mark 5 out of 10 verses as read
       final verses = List.generate(5, (i) {
@@ -434,7 +448,14 @@ void main() {
     });
 
     test('is 1.0 when all verses are read', () async {
-      final schedule = Schedule()..booksToRead = ['Book1'];
+      final schedule = Schedule()
+        ..name = 'Test'
+        ..startDate = DateTime(2024, 1, 1)
+        ..endDate = DateTime(2024, 1, 3)
+        ..booksToRead = ['Book1'];
+      await isar.writeTxn(() async {
+        isar.schedules.put(schedule);
+      });
 
       // Mark all 10 verses as read
       final verses = List.generate(10, (i) {
@@ -454,7 +475,14 @@ void main() {
     });
 
     test('is 1.0 for a schedule with no books', () async {
-      final schedule = Schedule()..booksToRead = [];
+      final schedule = Schedule()
+        ..name = 'Test'
+        ..startDate = DateTime(2024, 1, 1)
+        ..endDate = DateTime(2024, 1, 3)
+        ..booksToRead = [];
+      await isar.writeTxn(() async {
+        isar.schedules.put(schedule);
+      });
 
       final progress = await schedule.getReadingProgress(mockBible);
       expect(progress, 1.0);
