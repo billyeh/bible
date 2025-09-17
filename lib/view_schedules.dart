@@ -100,7 +100,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                               builder: (_) =>
                                   ReadingPage(schedule: s, bible: BibleData()),
                             ),
-                          );
+                          ).then((_) => setState(() {}));
                         },
                       ),
                       Padding(
@@ -114,7 +114,9 @@ class _SchedulesPageState extends State<SchedulesPage> {
                             }
 
                             final readingProgress = snapshot.data ?? 0.0;
-                            final timeProgress = s.getTimeProgress(DateTime.now());
+                            final timeProgress = s.getTimeProgress(
+                              DateTime.now(),
+                            );
 
                             return LayoutBuilder(
                               builder: (context, constraints) {
@@ -131,7 +133,9 @@ class _SchedulesPageState extends State<SchedulesPage> {
                                       ),
                                       Container(
                                         height: 10,
-                                        width: constraints.maxWidth * readingProgress,
+                                        width:
+                                            constraints.maxWidth *
+                                            readingProgress,
                                         decoration: BoxDecoration(
                                           color: Colors.green,
                                         ),
@@ -140,13 +144,16 @@ class _SchedulesPageState extends State<SchedulesPage> {
                                       // Time indicator
                                       Positioned(
                                         top: -2.5,
-                                        left: constraints.maxWidth * timeProgress - 1,
+                                        left:
+                                            constraints.maxWidth *
+                                                timeProgress -
+                                            1,
                                         child: Container(
                                           height: 15,
                                           width: 2,
                                           color: Colors.black,
                                         ),
-                                      )
+                                      ),
                                     ],
                                   ),
                                 );
@@ -154,7 +161,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                             );
                           },
                         ),
-                      )
+                      ),
                     ],
                   ),
                 ),
