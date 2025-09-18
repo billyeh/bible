@@ -41,6 +41,11 @@ dependencies:
   path: ^1.8.3
   intl: ^0.20.2
 
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-VariableFont_opsz,wght.ttf
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

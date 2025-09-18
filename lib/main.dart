@@ -24,6 +24,7 @@ class MyApp extends StatelessWidget {
       title: 'Bible Reading App',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        fontFamily: 'Inter',
         useMaterial3: true,
       ),
       home: const SchedulesPage(),
