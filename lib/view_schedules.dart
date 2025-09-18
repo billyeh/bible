@@ -168,7 +168,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                           child: Container(
                             margin: const EdgeInsets.only(bottom: 12),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFfbf2e0),
+                              color: const Color.fromARGB(255, 242, 235, 217),
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
