@@ -115,7 +115,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
 
                     final schedules = snapshot.data!;
                     return ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.symmetric(horizontal: 30),
                       itemCount: schedules.length,
                       itemBuilder: (context, index) {
                         final s = schedules[index];
@@ -166,7 +166,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                             );
                           },
                           child: Container(
-                            margin: const EdgeInsets.only(bottom: 12),
+                            margin: const EdgeInsets.only(bottom: 20),
                             decoration: BoxDecoration(
                               color: const Color.fromARGB(255, 242, 235, 217),
                               borderRadius: BorderRadius.circular(20),
