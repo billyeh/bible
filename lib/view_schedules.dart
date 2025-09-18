@@ -38,7 +38,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
           controller: _pageController,
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 80, horizontal: 0),
+              padding: const EdgeInsets.fromLTRB(0, 20, 0, 300),
               child: _buildReadingPlansCard(dateFormat),
             ),
 
@@ -49,17 +49,6 @@ class _SchedulesPageState extends State<SchedulesPage> {
             // ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const CreateSchedulePage()),
-          );
-          setState(() {});
-        },
-        backgroundColor: const Color(0xff1d7fff),
-        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
@@ -82,211 +71,239 @@ class _SchedulesPageState extends State<SchedulesPage> {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28.0),
-          child: Column(
+          child: Stack(
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 40, 20, 0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "My Reading Plans",
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              Expanded(
-                child: FutureBuilder<List<Schedule>>(
-                  future: isar.schedules.where().findAll(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    } else if (snapshot.hasError) {
-                      return Center(child: Text("Error: ${snapshot.error}"));
-                    } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      return const Center(child: Text("No reading plans yet."));
-                    }
-
-                    final schedules = snapshot.data!;
-                    return ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 30),
-                      itemCount: schedules.length,
-                      itemBuilder: (context, index) {
-                        final s = schedules[index];
-                        return Dismissible(
-                          key: ValueKey(s.id),
-                          direction: DismissDirection.endToStart,
-                          background: Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: const Icon(
-                              Icons.delete,
-                              color: Colors.white,
-                            ),
+              Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 40, 20, 0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: const [
+                        Text(
+                          "My Reading Plans",
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w800,
                           ),
-                          confirmDismiss: (direction) async {
-                            return await showDialog<bool>(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text("Delete Schedule"),
-                                    content: Text(
-                                      "Are you sure you want to delete '${s.name}'?",
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.of(context).pop(false),
-                                        child: const Text("Cancel"),
-                                      ),
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.of(context).pop(true),
-                                        child: const Text("Delete"),
-                                      ),
-                                    ],
-                                  ),
-                                ) ??
-                                false;
-                          },
-                          onDismissed: (direction) {
-                            _deleteSchedule(s);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text("Deleted '${s.name}'")),
-                            );
-                          },
-                          child: Container(
-                            margin: const EdgeInsets.only(bottom: 20),
-                            decoration: BoxDecoration(
-                              color: const Color.fromARGB(255, 242, 235, 217),
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Expanded(
+                    child: FutureBuilder<List<Schedule>>(
+                      future: isar.schedules.where().findAll(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        } else if (snapshot.hasError) {
+                          return Center(
+                            child: Text("Error: ${snapshot.error}"),
+                          );
+                        } else if (!snapshot.hasData ||
+                            snapshot.data!.isEmpty) {
+                          return const Center(
+                            child: Text("No reading plans yet."),
+                          );
+                        }
+
+                        final schedules = snapshot.data!;
+                        return ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 30),
+                          itemCount: schedules.length,
+                          itemBuilder: (context, index) {
+                            final s = schedules[index];
+                            return Dismissible(
+                              key: ValueKey(s.id),
+                              direction: DismissDirection.endToStart,
+                              background: Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(20),
                                 ),
-                              ],
-                            ),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(20),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => ReadingPage(
-                                      schedule: s,
-                                      bible: BibleData(),
-                                    ),
-                                  ),
-                                ).then((_) => setState(() {}));
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          CupertinoIcons.rocket_fill,
-                                          color: Color(
-                                            0xFF8B4513,
-                                          ), // SaddleBrown
-                                          size: 40,
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                child: const Icon(
+                                  Icons.delete,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              confirmDismiss: (direction) async {
+                                return await showDialog<bool>(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text("Delete Schedule"),
+                                        content: Text(
+                                          "Are you sure you want to delete '${s.name}'?",
                                         ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                s.name,
-                                                style: const TextStyle(
-                                                  fontSize: 20,
-                                                  fontWeight: FontWeight.w700,
-                                                ),
-                                              ),
-                                              Text(
-                                                "${dateFormat.format(s.startDate)} → ${dateFormat.format(s.endDate)}",
-                                                style: TextStyle(
-                                                  color: Colors.grey.shade800,
-                                                  fontSize: 15,
-                                                ),
-                                              ),
-                                            ],
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.of(
+                                              context,
+                                            ).pop(false),
+                                            child: const Text("Cancel"),
                                           ),
-                                        ),
-                                      ],
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.of(context).pop(true),
+                                            child: const Text("Delete"),
+                                          ),
+                                        ],
+                                      ),
+                                    ) ??
+                                    false;
+                              },
+                              onDismissed: (direction) {
+                                _deleteSchedule(s);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text("Deleted '${s.name}'"),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 20),
+                                decoration: BoxDecoration(
+                                  color: const Color.fromARGB(
+                                    255,
+                                    242,
+                                    235,
+                                    217,
+                                  ),
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
                                     ),
-                                    const SizedBox(height: 12),
-                                    Row(
+                                  ],
+                                ),
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(20),
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => ReadingPage(
+                                          schedule: s,
+                                          bible: BibleData(),
+                                        ),
+                                      ),
+                                    ).then((_) => setState(() {}));
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Icon(CupertinoIcons.book),
-                                        const SizedBox(width: 2),
-                                        Text(
-                                          s.booksToRead.join(', '),
-                                          style: const TextStyle(fontSize: 16),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 16),
-                                    FutureBuilder<double>(
-                                      future: s.getReadingProgress(BibleData()),
-                                      builder: (context, snapshot) {
-                                        if (snapshot.connectionState ==
-                                            ConnectionState.waiting) {
-                                          return const LinearProgressIndicator();
-                                        }
-
-                                        final readingProgress =
-                                            snapshot.data ?? 0.0;
-                                        final timeProgress = s.getTimeProgress(
-                                          DateTime.now(),
-                                        );
-
-                                        return LayoutBuilder(
-                                          builder: (context, constraints) {
-                                            final barWidth =
-                                                constraints.maxWidth *
-                                                readingProgress;
-                                            final markerLeft =
-                                                constraints.maxWidth *
-                                                timeProgress;
-
-                                            return Stack(
-                                              clipBehavior: Clip.none,
-                                              children: [
-                                                ClipRRect(
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                  child: Container(
-                                                    height: 12,
-                                                    color: Colors.black
-                                                        .withOpacity(0.1),
+                                        Row(
+                                          children: [
+                                            const Icon(
+                                              CupertinoIcons.rocket_fill,
+                                              color: Color(0xFF8B4513),
+                                              size: 40,
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    s.name,
+                                                    style: const TextStyle(
+                                                      fontSize: 20,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
                                                   ),
-                                                ),
-                                                ClipRRect(
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                  child: Container(
-                                                    height: 12,
-                                                    width: barWidth,
-                                                    decoration:
-                                                        const BoxDecoration(
-                                                          gradient:
-                                                              LinearGradient(
+                                                  Text(
+                                                    "${dateFormat.format(s.startDate)} → ${dateFormat.format(s.endDate)}",
+                                                    style: TextStyle(
+                                                      color:
+                                                          Colors.grey.shade800,
+                                                      fontSize: 15,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Row(
+                                          children: [
+                                            const Icon(CupertinoIcons.book),
+                                            const SizedBox(width: 2),
+                                            Text(
+                                              s.booksToRead.join(', '),
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 16),
+                                        FutureBuilder<double>(
+                                          future: s.getReadingProgress(
+                                            BibleData(),
+                                          ),
+                                          builder: (context, snapshot) {
+                                            if (snapshot.connectionState ==
+                                                ConnectionState.waiting) {
+                                              return const LinearProgressIndicator();
+                                            }
+
+                                            final readingProgress =
+                                                snapshot.data ?? 0.0;
+                                            final timeProgress = s
+                                                .getTimeProgress(
+                                                  DateTime.now(),
+                                                );
+
+                                            return LayoutBuilder(
+                                              builder: (context, constraints) {
+                                                final barWidth =
+                                                    constraints.maxWidth *
+                                                    readingProgress;
+                                                final markerLeft =
+                                                    constraints.maxWidth *
+                                                    timeProgress;
+
+                                                return Stack(
+                                                  clipBehavior: Clip.none,
+                                                  children: [
+                                                    ClipRRect(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
+                                                      child: Container(
+                                                        height: 12,
+                                                        color: Colors.black
+                                                            .withOpacity(0.1),
+                                                      ),
+                                                    ),
+                                                    ClipRRect(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
+                                                      child: Container(
+                                                        height: 12,
+                                                        width: barWidth,
+                                                        decoration:
+                                                            const BoxDecoration(
+                                                              gradient: LinearGradient(
                                                                 colors: [
                                                                   Color(
                                                                     0xff1d7fff,
@@ -300,51 +317,79 @@ class _SchedulesPageState extends State<SchedulesPage> {
                                                                 end: Alignment
                                                                     .centerRight,
                                                               ),
-                                                        ),
-                                                  ),
-                                                ),
-                                                Positioned(
-                                                  left: markerLeft.clamp(
-                                                    0,
-                                                    constraints.maxWidth - 1,
-                                                  ),
-                                                  top: -6,
-                                                  bottom: -6,
-                                                  child: Container(
-                                                    width: 2,
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.white,
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            1,
-                                                          ),
-                                                      boxShadow: [
-                                                        BoxShadow(
-                                                          color: Colors.black
-                                                              .withOpacity(0.4),
-                                                          blurRadius: 3,
-                                                          spreadRadius: 0.5,
-                                                        ),
-                                                      ],
+                                                            ),
+                                                      ),
                                                     ),
-                                                  ),
-                                                ),
-                                              ],
+                                                    Positioned(
+                                                      left: markerLeft.clamp(
+                                                        0,
+                                                        constraints.maxWidth -
+                                                            1,
+                                                      ),
+                                                      top: -6,
+                                                      bottom: -6,
+                                                      child: Container(
+                                                        width: 2,
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.white,
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                1,
+                                                              ),
+                                                          boxShadow: [
+                                                            BoxShadow(
+                                                              color: Colors
+                                                                  .black
+                                                                  .withOpacity(
+                                                                    0.4,
+                                                                  ),
+                                                              blurRadius: 3,
+                                                              spreadRadius: 0.5,
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                );
+                                              },
                                             );
                                           },
-                                        );
-                                      },
+                                        ),
+                                        const SizedBox(height: 10),
+                                      ],
                                     ),
-                                    const SizedBox(height: 10),
-                                  ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
+                            );
+                          },
                         );
                       },
-                    );
-                  },
+                    ),
+                  ),
+                ],
+              ),
+              Positioned(
+                bottom: 20,
+                right: 20,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Color(0xff1d7fff),
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.add, color: Colors.white),
+                    onPressed: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CreateSchedulePage(),
+                        ),
+                      );
+                      setState(() {});
+                    },
+                  ),
                 ),
               ),
             ],
