@@ -84,7 +84,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                           "My Reading Plans",
                           style: TextStyle(
                             fontSize: 32,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
@@ -223,7 +223,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                                                     style: const TextStyle(
                                                       fontSize: 20,
                                                       fontWeight:
-                                                          FontWeight.w700,
+                                                          FontWeight.w600,
                                                     ),
                                                   ),
                                                   Text(
