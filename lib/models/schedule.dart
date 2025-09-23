@@ -92,10 +92,12 @@ extension ScheduleExtensions on Schedule {
       return false;
     }
 
-    final allVersesSet =
-        allVerses.map((v) => '${v.book}-${v.chapter}-${v.verse}').toSet();
-    final versesReadSet =
-        versesRead.map((v) => '${v.book}-${v.chapter}-${v.verse}').toSet();
+    final allVersesSet = allVerses
+        .map((v) => '${v.book}-${v.chapter}-${v.verse}')
+        .toSet();
+    final versesReadSet = versesRead
+        .map((v) => '${v.book}-${v.chapter}-${v.verse}')
+        .toSet();
 
     return allVersesSet.difference(versesReadSet).isEmpty;
   }
@@ -141,5 +143,23 @@ extension ScheduleExtensions on Schedule {
     }
 
     return versesRead.length / totalVerses;
+  }
+
+  /// Returns true if the user has completed today's reading.
+  Future<bool> isReadingDone(BibleData bible, DateTime time) async {
+    await versesRead.load();
+    final todayVerses = await getVersesForScheduleDate(bible, time);
+
+    if (todayVerses.isEmpty) {
+      return true;
+    }
+
+    final todaySet = todayVerses
+        .map((v) => '${v['book']}-${v['chapter']}-${v['verse']}')
+        .toSet();
+    final readSet = versesRead
+        .map((v) => '${v.book}-${v.chapter}-${v.verse}')
+        .toSet();
+    return todaySet.difference(readSet).isEmpty;
   }
 }

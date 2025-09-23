@@ -199,80 +199,118 @@ class _SchedulesPageState extends State<SchedulesPage> {
           },
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Stack(
               children: [
-                Text(
-                  s.name,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "${dateFormat.format(s.startDate)} - ${dateFormat.format(s.endDate)}",
-                  style: TextStyle(fontSize: 15, color: Colors.grey.shade700),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  s.booksToRead.join(', '),
-                  style: const TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 12),
-                FutureBuilder<double>(
-                  future: s.getReadingProgress(BibleData()),
-                  builder: (context, snapshot) {
-                    final readingProgress = snapshot.data ?? 0.0;
-                    return TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0.0, end: 1),
-                      duration: const Duration(milliseconds: 500),
-                      curve: Curves.easeOut,
-                      builder: (context, t, child) {
-                        return SizedBox(
-                          height: 16,
-                          child: Stack(
-                            alignment: Alignment.centerLeft,
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child: LinearProgressIndicator(
-                                  value: t * readingProgress,
-                                  minHeight: 8,
-                                  backgroundColor: Colors.grey.shade300,
-                                  color: const Color(0xff1d7fff),
-                                ),
-                              ),
-                              LayoutBuilder(
-                                builder: (context, constraints) {
-                                  final width = constraints.maxWidth;
-                                  final circlePosition =
-                                      t *
-                                      (width - 12) *
-                                      s.getTimeProgress(DateTime.now());
-                                  return Transform.translate(
-                                    offset: Offset(circlePosition, 0),
-                                    child: Container(
-                                      width: 12,
-                                      height: 12,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        border: Border.all(
-                                          color: Colors.black,
-                                          width: 1.5,
-                                        ),
-                                        shape: BoxShape.circle,
-                                      ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s.name,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "${dateFormat.format(s.startDate)} - ${dateFormat.format(s.endDate)}",
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      s.booksToRead.join(', '),
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(height: 12),
+                    FutureBuilder<double>(
+                      future: s.getReadingProgress(BibleData()),
+                      builder: (context, snapshot) {
+                        final readingProgress = snapshot.data ?? 0.0;
+                        final timeProgress = s.getTimeProgress(DateTime.now());
+                        return TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0.0, end: 1),
+                          duration: const Duration(milliseconds: 500),
+                          curve: Curves.easeOut,
+                          builder: (context, t, child) {
+                            return SizedBox(
+                              height: 16,
+                              child: Stack(
+                                alignment: Alignment.centerLeft,
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: LinearProgressIndicator(
+                                      value: t * readingProgress,
+                                      minHeight: 8,
+                                      backgroundColor: Colors.grey.shade300,
+                                      color: const Color(0xff1d7fff),
                                     ),
-                                  );
-                                },
+                                  ),
+                                  LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      final width = constraints.maxWidth;
+                                      final circlePosition =
+                                          t * (width - 12) * timeProgress;
+                                      return Transform.translate(
+                                        offset: Offset(circlePosition, 0),
+                                        child: Container(
+                                          width: 12,
+                                          height: 12,
+                                          decoration: BoxDecoration(
+                                            color:
+                                                readingProgress >= timeProgress
+                                                ? Color(0xff1d7fff)
+                                                : Colors.grey.shade300,
+                                            border: Border.all(
+                                              color: Color(0xff1d7fff),
+                                              width: 1.5,
+                                            ),
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            );
+                          },
                         );
                       },
-                    );
-                  },
+                    ),
+                  ],
+                ),
+                Positioned(
+                  top: 10,
+                  right: 0,
+                  child: FutureBuilder<bool>(
+                    future: s.isReadingDone(BibleData(), DateTime.now()),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return const SizedBox(width: 14, height: 14);
+                      }
+                      final done = snapshot.data ?? false;
+                      return AnimatedOpacity(
+                        opacity: done ? 0 : 1,
+                        duration: const Duration(milliseconds: 500),
+                        child: Container(
+                          width: 14,
+                          height: 14,
+                          decoration: BoxDecoration(
+                            color: done
+                                ? Colors.transparent
+                                // : Color(0xffE6F0FA),
+                                // : Color(0xff1d7fff),
+                                : Colors.grey.shade300,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),

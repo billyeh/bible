@@ -488,4 +488,65 @@ void main() {
       expect(progress, 1.0);
     });
   });
+
+  test('isReadingDoneToday works correctly', () async {
+    // Arrange: create a schedule for today
+    final today = DateTime.now();
+    final schedule = Schedule.create(
+      name: 'Test Schedule',
+      startDate: today,
+      endDate: today,
+      booksToRead: ['TestBook'],
+    );
+
+    await isar.writeTxn(() async {
+      await isar.schedules.put(schedule);
+    });
+
+    // Mock BibleData for today’s verses
+    final mockBible = MockBibleData(
+      bookVerseCounts: {'TestBook': 2},
+      bookVerses: {
+        'TestBook': [
+          {'book': 'TestBook', 'chapter': 1, 'verse': 1},
+          {'book': 'TestBook', 'chapter': 1, 'verse': 2},
+        ],
+      },
+    );
+
+    // Case 1: No verses read → should be false
+    await schedule.versesRead.load();
+    var result = await schedule.isReadingDone(mockBible, today);
+    expect(result, isFalse);
+
+    // Case 2: Read only one verse → still false
+    final verse1 = Verse()
+      ..book = 'TestBook'
+      ..chapter = 1
+      ..verse = 1;
+
+    await isar.writeTxn(() async {
+      await isar.verses.put(verse1);
+      schedule.versesRead.add(verse1);
+      await isar.schedules.put(schedule);
+    });
+    await schedule.versesRead.load();
+    result = await schedule.isReadingDone(mockBible, today);
+    expect(result, isFalse);
+
+    // Case 3: Read all today’s verses → should be true
+    final verse2 = Verse()
+      ..book = 'TestBook'
+      ..chapter = 1
+      ..verse = 2;
+
+    await isar.writeTxn(() async {
+      await isar.verses.put(verse2);
+      schedule.versesRead.add(verse2);
+      await isar.schedules.put(schedule);
+    });
+    await schedule.versesRead.load();
+    result = await schedule.isReadingDone(mockBible, today);
+    expect(result, isTrue);
+  });
 }
