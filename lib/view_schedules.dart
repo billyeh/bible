@@ -93,7 +93,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
 
               Expanded(
                 child: Padding(
-                  padding: EdgeInsets.only(left: 10, right: 10),
+                  padding: EdgeInsets.only(left: 10, right: 12),
                   child: FutureBuilder<List<Schedule>>(
                     future: isar.schedules.where().findAll(),
                     builder: (context, snapshot) {
@@ -284,27 +284,27 @@ class _SchedulesPageState extends State<SchedulesPage> {
                   ],
                 ),
                 Positioned(
-                  top: 10,
+                  top: 12,
                   right: 0,
                   child: FutureBuilder<bool>(
                     future: s.isReadingDone(BibleData(), DateTime.now()),
                     builder: (context, snapshot) {
                       if (!snapshot.hasData) {
-                        return const SizedBox(width: 14, height: 14);
+                        return const SizedBox(width: 12, height: 12);
                       }
                       final done = snapshot.data ?? false;
                       return AnimatedOpacity(
                         opacity: done ? 0 : 1,
                         duration: const Duration(milliseconds: 500),
                         child: Container(
-                          width: 14,
-                          height: 14,
+                          width: 12,
+                          height: 12,
                           decoration: BoxDecoration(
                             color: done
                                 ? Colors.transparent
                                 // : Color(0xffE6F0FA),
-                                // : Color(0xff1d7fff),
-                                : Colors.grey.shade300,
+                                : Color(0xff1d7fff),
+                            // : Colors.grey.shade300,
                             shape: BoxShape.circle,
                           ),
                         ),
