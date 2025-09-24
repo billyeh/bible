@@ -24,25 +24,10 @@ class _ReadingPageState extends State<ReadingPage>
   List<Map<String, dynamic>> verses = [];
   late PageController _pageController;
   late int _initialPageIndex;
-  late final AnimationController _bounceController;
-  late final Animation<double> _bounceAnimation;
 
   @override
   void initState() {
     super.initState();
-
-    _bounceController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-
-    _bounceAnimation =
-        TweenSequence([
-          TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.2), weight: 50),
-          TweenSequenceItem(tween: Tween(begin: 1.2, end: 1.0), weight: 50),
-        ]).animate(
-          CurvedAnimation(parent: _bounceController, curve: Curves.easeOut),
-        );
 
     // Ensure selectedDate is within schedule.
     if (!widget.schedule.isAfterOrOnStartDate(DateTime.now())) {
@@ -70,7 +55,6 @@ class _ReadingPageState extends State<ReadingPage>
 
   @override
   void dispose() {
-    _bounceController.dispose();
     _pageController.dispose();
     super.dispose();
   }
@@ -90,11 +74,6 @@ class _ReadingPageState extends State<ReadingPage>
         if (!_isVerseRead(v)) {
           await _toggleVerse(v);
         }
-      }
-
-      // Play bounce only if all are now read
-      if (_allVersesRead()) {
-        _bounceController.forward(from: 0);
       }
     }
     setState(() {});
@@ -229,22 +208,32 @@ class _ReadingPageState extends State<ReadingPage>
           },
         ),
       ),
-      floatingActionButton: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        transitionBuilder: (child, animation) => FadeTransition(
-          opacity: animation,
-          child: ScaleTransition(scale: animation, child: child),
-        ),
-        child: ScaleTransition(
-          key: ValueKey(_allVersesRead()),
-          scale: _bounceAnimation,
-          child: FloatingActionButton(
-            key: ValueKey(_allVersesRead()),
-            onPressed: _checkOrUncheckAll,
-            backgroundColor: const Color(0xff1d7fff),
-            tooltip: _allVersesRead() ? "Uncheck All" : "Check All",
-            child: Icon(_allVersesRead() ? Icons.clear_all : Icons.done_all),
-          ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: verses.isEmpty ? null : _checkOrUncheckAll,
+        backgroundColor: const Color(0xff1d7fff),
+        tooltip: verses.isEmpty
+            ? "Loading..."
+            : _allVersesRead()
+            ? "Uncheck All"
+            : "Check All",
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          transitionBuilder: (child, animation) =>
+              FadeTransition(opacity: animation, child: child),
+          child: verses.isEmpty
+              ? const SizedBox(
+                  key: ValueKey('loading'),
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    strokeWidth: 2,
+                  ),
+                )
+              : Icon(
+                  _allVersesRead() ? Icons.clear_all : Icons.done_all,
+                  key: ValueKey(_allVersesRead()),
+                ),
         ),
       ),
     );
