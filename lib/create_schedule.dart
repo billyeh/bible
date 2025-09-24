@@ -42,15 +42,19 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
 
   void _updateFromVersesPerDay() {
     if (_totalVersesSelected == 0) return;
+
     final totalDays = (_totalVersesSelected / _versesPerDay).ceil();
+
     setState(() {
-      _endDate = _startDate.add(Duration(days: totalDays));
+      _endDate = _startDate.add(Duration(days: max(1, totalDays - 1)));
     });
   }
 
   void _updateFromEndDate() {
     if (_totalVersesSelected == 0) return;
-    final totalDays = _endDate.difference(_startDate).inDays;
+
+    final totalDays = _endDate.difference(_startDate).inDays + 1;
+
     setState(() {
       _versesPerDay = (_totalVersesSelected / totalDays).ceil();
     });
