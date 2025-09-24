@@ -2,57 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:isar/isar.dart';
 
+import 'package:bible/animated_tile.dart';
 import 'package:bible/main.dart';
 import 'package:bible/create_schedule.dart';
 import 'package:bible/reading.dart';
 import 'package:bible/bible_data/bible_data.dart';
 import 'models/schedule.dart';
-
-class AnimatedScheduleTile extends StatefulWidget {
-  final Widget child;
-  final int index;
-
-  const AnimatedScheduleTile({
-    super.key,
-    required this.child,
-    required this.index,
-  });
-
-  @override
-  State<AnimatedScheduleTile> createState() => _AnimatedScheduleTileState();
-}
-
-class _AnimatedScheduleTileState extends State<AnimatedScheduleTile>
-    with SingleTickerProviderStateMixin {
-  bool _visible = false;
-
-  @override
-  void initState() {
-    super.initState();
-    Future.delayed(Duration(milliseconds: 100 * widget.index), () {
-      if (mounted) {
-        setState(() {
-          _visible = true;
-        });
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedOpacity(
-      duration: const Duration(milliseconds: 500),
-      opacity: _visible ? 1 : 0,
-      curve: Curves.easeOut,
-      child: AnimatedSlide(
-        duration: const Duration(milliseconds: 500),
-        offset: _visible ? Offset.zero : const Offset(0, 0.1),
-        curve: Curves.easeOut,
-        child: widget.child,
-      ),
-    );
-  }
-}
 
 class SchedulesPage extends StatefulWidget {
   const SchedulesPage({super.key});
@@ -112,7 +67,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                         itemCount: schedules.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 28),
                         itemBuilder: (context, index) {
-                          return AnimatedScheduleTile(
+                          return AnimatedTile(
                             index: index,
                             child: _buildScheduleTile(
                               schedules[index],
@@ -230,6 +185,9 @@ class _SchedulesPageState extends State<SchedulesPage> {
                       builder: (context, snapshot) {
                         final readingProgress = snapshot.data ?? 0.0;
                         final timeProgress = s.getTimeProgress(DateTime.now());
+                        final circleColor = readingProgress >= timeProgress
+                            ? Color(0xff1d7fff)
+                            : Colors.grey.shade300;
                         return TweenAnimationBuilder<double>(
                           tween: Tween(begin: 0.0, end: 1),
                           duration: const Duration(milliseconds: 500),
@@ -260,12 +218,9 @@ class _SchedulesPageState extends State<SchedulesPage> {
                                           width: 12,
                                           height: 12,
                                           decoration: BoxDecoration(
-                                            color:
-                                                readingProgress >= timeProgress
-                                                ? Color(0xff1d7fff)
-                                                : Colors.grey.shade300,
+                                            color: circleColor,
                                             border: Border.all(
-                                              color: Color(0xff1d7fff),
+                                              color: circleColor,
                                               width: 1.5,
                                             ),
                                             shape: BoxShape.circle,

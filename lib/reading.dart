@@ -1,11 +1,12 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:isar/isar.dart';
+
+import 'package:bible/animated_tile.dart';
 import 'package:bible/models/schedule.dart';
 import 'package:bible/models/verse.dart';
 import 'package:bible/bible_data/bible_data.dart';
 import 'package:bible/main.dart';
-
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:isar/isar.dart';
 
 class ReadingPage extends StatefulWidget {
   final Schedule schedule;
@@ -21,6 +22,8 @@ class _ReadingPageState extends State<ReadingPage>
     with SingleTickerProviderStateMixin {
   DateTime selectedDate = DateTime.now();
   List<Map<String, dynamic>> verses = [];
+  late PageController _pageController;
+  late int _initialPageIndex;
   late final AnimationController _bounceController;
   late final Animation<double> _bounceAnimation;
 
@@ -58,12 +61,17 @@ class _ReadingPageState extends State<ReadingPage>
       selectedDate = DateTime.now();
     }
 
+    _initialPageIndex = selectedDate
+        .difference(widget.schedule.startDate)
+        .inDays;
+    _pageController = PageController(initialPage: _initialPageIndex);
     _loadVersesForDate(selectedDate);
   }
 
   @override
   void dispose() {
     _bounceController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -154,11 +162,21 @@ class _ReadingPageState extends State<ReadingPage>
 
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat.yMMMd();
+    final dateFormat = DateFormat.MMMd();
+    final totalDays =
+        widget.schedule.endDate.difference(widget.schedule.startDate).inDays +
+        1;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF9F9F9),
       appBar: AppBar(
-        title: Text("Reading for ${dateFormat.format(selectedDate)}"),
+        title: Text(
+          "Reading for ${dateFormat.format(selectedDate)}",
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.calendar_today),
@@ -170,6 +188,10 @@ class _ReadingPageState extends State<ReadingPage>
                 lastDate: widget.schedule.endDate,
               );
               if (picked != null) {
+                final pageIndex = picked
+                    .difference(widget.schedule.startDate)
+                    .inDays;
+                _pageController.jumpToPage(pageIndex);
                 _loadVersesForDate(picked);
               }
             },
@@ -177,93 +199,82 @@ class _ReadingPageState extends State<ReadingPage>
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Verse list
-          Expanded(
-            child: verses.isEmpty
-                ? Center(
-                    child: Text(
-                      'No reading for ${dateFormat.format(selectedDate)} 🎉',
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+        // Verse list
+        child: PageView.builder(
+          controller: _pageController,
+          itemCount: totalDays,
+          onPageChanged: (index) {
+            final newDate = widget.schedule.startDate.add(
+              Duration(days: index),
+            );
+            _loadVersesForDate(newDate);
+          },
+          itemBuilder: (context, index) {
+            return verses.isEmpty
+                ? Center(child: CircularProgressIndicator())
+                : Padding(
+                    padding: EdgeInsets.only(left: 10, right: 10),
+                    child: ListView.builder(
+                      itemCount: verses.length,
+                      itemBuilder: (context, index) {
+                        return AnimatedTile(
+                          index: index,
+                          child: _buildVerseTile(context, index),
+                        );
+                      },
                     ),
-                  )
-                : ListView.builder(
-                    itemCount: verses.length,
-                    itemBuilder: (context, index) {
-                      final v = verses[index];
-                      final isRead = _isVerseRead(v);
-                      return ListTile(
-                        title: Text(
-                          "${v['book']} ${v['chapter']}:${v['verse']} ${v['text']}",
-                          style: TextStyle(
-                            decoration: isRead
-                                ? TextDecoration.lineThrough
-                                : null,
-                            color: isRead ? Colors.grey : null,
-                          ),
-                        ),
-                        trailing: Icon(
-                          isRead
-                              ? Icons.check_circle
-                              : Icons.radio_button_unchecked,
-                          color: isRead ? Colors.green : null,
-                        ),
-                        onTap: () => _toggleVerse(v),
-                      );
-                    },
-                  ),
-          ),
-        ],
+                  );
+          },
+        ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            IconButton.filled(
-              onPressed: widget.schedule.isAfterStartDate(selectedDate)
-                  ? () => _loadVersesForDate(
-                      selectedDate.subtract(const Duration(days: 1)),
-                    )
-                  : null,
-              icon: const Icon(Icons.arrow_back),
-              tooltip: "Previous Day",
-            ),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              transitionBuilder: (child, animation) => FadeTransition(
-                opacity: animation,
-                child: ScaleTransition(scale: animation, child: child),
-              ),
-              child: ScaleTransition(
-                key: ValueKey(_allVersesRead()),
-                scale: _bounceAnimation,
-                child: FloatingActionButton(
-                  key: ValueKey(_allVersesRead()),
-                  onPressed: _checkOrUncheckAll,
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Colors.white,
-                  elevation: 8,
-                  highlightElevation: 12,
+      floatingActionButton: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        transitionBuilder: (child, animation) => FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(scale: animation, child: child),
+        ),
+        child: ScaleTransition(
+          key: ValueKey(_allVersesRead()),
+          scale: _bounceAnimation,
+          child: FloatingActionButton(
+            key: ValueKey(_allVersesRead()),
+            onPressed: _checkOrUncheckAll,
+            backgroundColor: const Color(0xff1d7fff),
+            tooltip: _allVersesRead() ? "Uncheck All" : "Check All",
+            child: Icon(_allVersesRead() ? Icons.clear_all : Icons.done_all),
+          ),
+        ),
+      ),
+    );
+  }
 
-                  tooltip: _allVersesRead() ? "Uncheck All" : "Check All",
-                  child: Icon(
-                    _allVersesRead() ? Icons.clear_all : Icons.done_all,
-                    size: 30,
-                  ),
-                ),
+  Widget _buildVerseTile(BuildContext context, int index) {
+    final v = verses[index];
+    final isRead = _isVerseRead(v);
+    final textStyle = TextStyle(
+      fontSize: 16,
+      color: isRead ? Colors.grey.shade500 : Colors.black,
+    );
+    final boldTextStyle = textStyle.copyWith(fontWeight: FontWeight.w600);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _toggleVerse(v),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "${v['book']} ${v['chapter']}:${v['verse']}",
+                style: boldTextStyle,
               ),
-            ),
-            IconButton.filled(
-              onPressed: widget.schedule.isBeforeEndDate(selectedDate)
-                  ? () => _loadVersesForDate(
-                      selectedDate.add(const Duration(days: 1)),
-                    )
-                  : null,
-              icon: const Icon(Icons.arrow_forward),
-              tooltip: "Next Day",
-            ),
-          ],
+              Text("${v['text']}", style: textStyle),
+            ],
+          ),
         ),
       ),
     );
