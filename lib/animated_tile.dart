@@ -17,7 +17,7 @@ class _AnimatedTileState extends State<AnimatedTile>
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration(milliseconds: 100 * widget.index), () {
+    Future.delayed(Duration(milliseconds: 10 * widget.index % 100), () {
       if (mounted) {
         setState(() {
           _visible = true;
