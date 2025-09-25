@@ -18,21 +18,28 @@ class ReadingPage extends StatefulWidget {
   State<ReadingPage> createState() => _ReadingPageState();
 }
 
-class _ReadingPageState extends State<ReadingPage>
-    with SingleTickerProviderStateMixin {
+class _ReadingPageState extends State<ReadingPage> {
   DateTime selectedDate = DateTime.now();
   List<Map<String, dynamic>> verses = [];
   late PageController _pageController;
   late int _initialPageIndex;
+  bool _isTogglingAll = false;
+  bool _isPageLoading = true;
+
+  // Fast lookup for verses read
+  late Set<String> _versesReadSet;
 
   @override
   void initState() {
     super.initState();
 
+    _versesReadSet = widget.schedule.versesRead
+        .map((v) => '${v.book}:${v.chapter}:${v.verse}')
+        .toSet();
+
     // Ensure selectedDate is within schedule.
     if (!widget.schedule.isAfterOrOnStartDate(DateTime.now())) {
       selectedDate = widget.schedule.startDate;
-      // Delay SnackBar to show after build.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -59,35 +66,49 @@ class _ReadingPageState extends State<ReadingPage>
     super.dispose();
   }
 
-  Future<void> _checkOrUncheckAll() async {
-    final wasAllRead = _allVersesRead();
-    if (wasAllRead) {
-      // Uncheck all
-      for (final v in verses) {
-        if (_isVerseRead(v)) {
-          await _toggleVerse(v);
-        }
-      }
-    } else {
-      // Check all
-      for (final v in verses) {
-        if (!_isVerseRead(v)) {
-          await _toggleVerse(v);
-        }
-      }
-    }
-    setState(() {});
-  }
-
   Future<void> _loadVersesForDate(DateTime date) async {
+    setState(() => _isPageLoading = true);
+
     final v = await widget.schedule.getVersesForScheduleDate(
       widget.bible,
       date,
     );
+
     setState(() {
       selectedDate = date;
       verses = v;
+      _isPageLoading = false;
     });
+  }
+
+  bool _allVersesRead() {
+    return verses.isNotEmpty &&
+        verses.every(
+          (v) => _versesReadSet.contains(
+            '${v['book']}:${v['chapter']}:${v['verse']}',
+          ),
+        );
+  }
+
+  Future<void> _checkOrUncheckAll() async {
+    if (verses.isEmpty) return;
+
+    setState(() => _isTogglingAll = true);
+
+    final wasAllRead = _allVersesRead();
+
+    for (final v in verses) {
+      final key = '${v['book']}:${v['chapter']}:${v['verse']}';
+      final alreadyRead = _versesReadSet.contains(key);
+
+      if (wasAllRead && alreadyRead) {
+        await _toggleVerse(v);
+      } else if (!wasAllRead && !alreadyRead) {
+        await _toggleVerse(v);
+      }
+    }
+
+    setState(() => _isTogglingAll = false);
   }
 
   Future<void> _toggleVerse(Map<String, dynamic> verseRow) async {
@@ -101,6 +122,7 @@ class _ReadingPageState extends State<ReadingPage>
         .chapterEqualTo(chapter)
         .verseEqualTo(verseNum)
         .findFirst();
+
     if (verseRef == null) {
       verseRef = Verse()
         ..book = book
@@ -111,32 +133,21 @@ class _ReadingPageState extends State<ReadingPage>
       });
     }
 
-    final isRead = widget.schedule.versesRead.contains(verseRef);
+    final key = '$book:$chapter:$verseNum';
+    final isRead = _versesReadSet.contains(key);
 
     await isar.writeTxn(() async {
       if (isRead) {
+        _versesReadSet.remove(key);
         widget.schedule.versesRead.remove(verseRef);
       } else if (verseRef != null) {
+        _versesReadSet.add(key);
         widget.schedule.versesRead.add(verseRef);
       }
       await widget.schedule.versesRead.save();
     });
 
-    setState(() {}); // Refresh UI
-  }
-
-  bool _isVerseRead(Map<String, dynamic> verseRow) {
-    final book = verseRow['book'] as String;
-    final chapter = verseRow['chapter'] as int;
-    final verseNum = verseRow['verse'] as int;
-
-    return widget.schedule.versesRead.any(
-      (v) => v.book == book && v.chapter == chapter && v.verse == verseNum,
-    );
-  }
-
-  bool _allVersesRead() {
-    return verses.isNotEmpty && verses.every((v) => _isVerseRead(v));
+    setState(() {}); // only necessary to refresh FAB and tile
   }
 
   @override
@@ -180,7 +191,6 @@ class _ReadingPageState extends State<ReadingPage>
       ),
       body: Padding(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-        // Verse list
         child: PageView.builder(
           controller: _pageController,
           itemCount: totalDays,
@@ -191,27 +201,37 @@ class _ReadingPageState extends State<ReadingPage>
             _loadVersesForDate(newDate);
           },
           itemBuilder: (context, index) {
-            return verses.isEmpty
-                ? Center(child: CircularProgressIndicator())
-                : Padding(
-                    padding: EdgeInsets.only(left: 10, right: 10),
-                    child: ListView.builder(
-                      itemCount: verses.length,
-                      itemBuilder: (context, index) {
-                        return AnimatedTile(
-                          index: index,
-                          child: _buildVerseTile(context, index),
-                        );
-                      },
-                    ),
-                  );
+            if (verses.isEmpty) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            return ListView.builder(
+              itemCount: verses.length,
+              itemBuilder: (context, index) {
+                final v = Map<String, dynamic>.from(verses[index]);
+                v['index'] = index;
+
+                return VerseTile(
+                  verse: v,
+                  isRead: _versesReadSet.contains(
+                    '${v['book']}:${v['chapter']}:${v['verse']}',
+                  ),
+                  onToggle: (newState) async {
+                    await _toggleVerse(v);
+                    setState(() {}); // rebuild tiles to reflect new state
+                  },
+                );
+              },
+            );
           },
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: verses.isEmpty ? null : _checkOrUncheckAll,
+        onPressed: verses.isEmpty || _isTogglingAll || _isPageLoading
+            ? null
+            : _checkOrUncheckAll,
         backgroundColor: const Color(0xff1d7fff),
-        tooltip: verses.isEmpty
+        tooltip: _isPageLoading
             ? "Loading..."
             : _allVersesRead()
             ? "Uncheck All"
@@ -220,7 +240,7 @@ class _ReadingPageState extends State<ReadingPage>
           duration: const Duration(milliseconds: 200),
           transitionBuilder: (child, animation) =>
               FadeTransition(opacity: animation, child: child),
-          child: verses.isEmpty
+          child: (_isTogglingAll || _isPageLoading)
               ? const SizedBox(
                   key: ValueKey('loading'),
                   width: 24,
@@ -238,31 +258,48 @@ class _ReadingPageState extends State<ReadingPage>
       ),
     );
   }
+}
 
-  Widget _buildVerseTile(BuildContext context, int index) {
-    final v = verses[index];
-    final isRead = _isVerseRead(v);
+class VerseTile extends StatelessWidget {
+  final Map<String, dynamic> verse;
+  final bool isRead;
+  final void Function(bool isNowRead) onToggle;
+
+  const VerseTile({
+    super.key,
+    required this.verse,
+    required this.isRead,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final textStyle = TextStyle(
       fontSize: 16,
       color: isRead ? Colors.grey.shade500 : Colors.black,
     );
     final boldTextStyle = textStyle.copyWith(fontWeight: FontWeight.w600);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => _toggleVerse(v),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "${v['book']} ${v['chapter']}:${v['verse']}",
-                style: boldTextStyle,
-              ),
-              Text("${v['text']}", style: textStyle),
-            ],
+
+    return AnimatedTile(
+      uniqueKey: '${verse['book']}-${verse['chapter']}-${verse['verse']}',
+      staggerIndex: verse['index'] ?? 0,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => onToggle(!isRead),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "${verse['book']} ${verse['chapter']}:${verse['verse']}",
+                  style: boldTextStyle,
+                ),
+                Text("${verse['text']}", style: textStyle),
+              ],
+            ),
           ),
         ),
       ),

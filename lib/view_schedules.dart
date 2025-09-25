@@ -17,11 +17,26 @@ class SchedulesPage extends StatefulWidget {
 }
 
 class _SchedulesPageState extends State<SchedulesPage> {
+  List<Schedule> _schedules = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSchedules();
+  }
+
+  Future<void> _loadSchedules() async {
+    setState(() => _loading = true);
+    _schedules = await isar.schedules.where().findAll();
+    setState(() => _loading = false);
+  }
+
   Future<void> _deleteSchedule(Schedule schedule) async {
     await isar.writeTxn(() async {
       await isar.schedules.delete(schedule.id);
     });
-    setState(() {});
+    await _loadSchedules();
   }
 
   @override
@@ -47,39 +62,27 @@ class _SchedulesPageState extends State<SchedulesPage> {
               const SizedBox(height: 40),
 
               Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(left: 10, right: 12),
-                  child: FutureBuilder<List<Schedule>>(
-                    future: isar.schedules.where().findAll(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      } else if (snapshot.hasError) {
-                        return Center(child: Text("Error: ${snapshot.error}"));
-                      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return const Center(
-                          child: Text("No reading plans yet."),
-                        );
-                      }
-
-                      final schedules = snapshot.data!;
-                      return ListView.separated(
-                        itemCount: schedules.length,
+                child: _loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _schedules.isEmpty
+                    ? const Center(child: Text("No reading plans yet."))
+                    : ListView.separated(
+                        padding: const EdgeInsets.only(left: 10, right: 12),
+                        itemCount: _schedules.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 28),
                         itemBuilder: (context, index) {
+                          final schedule = _schedules[index];
                           return AnimatedTile(
-                            index: index,
+                            uniqueKey: schedule.id.toString(),
+                            staggerIndex: index,
                             child: _buildScheduleTile(
-                              schedules[index],
+                              schedule,
                               dateFormat,
                               index,
                             ),
                           );
                         },
-                      );
-                    },
-                  ),
-                ),
+                      ),
               ),
               const SizedBox(height: 100),
             ],
@@ -94,7 +97,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
             context,
             MaterialPageRoute(builder: (_) => const CreateSchedulePage()),
           );
-          setState(() {});
+          _loadSchedules(); // reload after adding a new schedule
         },
         child: const Icon(Icons.add),
       ),
@@ -126,7 +129,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                 builder: (_) => ReadingPage(schedule: s, bible: BibleData()),
               ),
             );
-            setState(() {});
+            _loadSchedules(); // reload in case reading progress changed
           },
           onLongPress: () async {
             final confirm =
@@ -186,9 +189,11 @@ class _SchedulesPageState extends State<SchedulesPage> {
                         final readingProgress = snapshot.data ?? 0.0;
                         final timeProgress = s.getTimeProgress(DateTime.now());
                         final circleColor = readingProgress >= timeProgress
-                            ? Color(0xff1d7fff)
+                            ? const Color(0xff1d7fff)
                             : Colors.grey.shade300;
+
                         return TweenAnimationBuilder<double>(
+                          key: ValueKey(readingProgress),
                           tween: Tween(begin: 0.0, end: 1),
                           duration: const Duration(milliseconds: 500),
                           curve: Curves.easeOut,
@@ -257,9 +262,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                           decoration: BoxDecoration(
                             color: done
                                 ? Colors.transparent
-                                // : Color(0xffE6F0FA),
-                                : Color(0xff1d7fff),
-                            // : Colors.grey.shade300,
+                                : const Color(0xff1d7fff),
                             shape: BoxShape.circle,
                           ),
                         ),
