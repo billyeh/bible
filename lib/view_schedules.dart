@@ -59,7 +59,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                   style: TextStyle(fontSize: 40, fontWeight: FontWeight.w600),
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 24),
 
               Expanded(
                 child: _loading
