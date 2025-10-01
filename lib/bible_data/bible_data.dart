@@ -107,3 +107,34 @@ class BibleData {
   ''', books);
   }
 }
+
+extension TestamentBooks on BibleData {
+  /// Returns all Old Testament books, based on getBooks().
+  Future<List<String>> getOldTestamentBooks() async {
+    final allBooks = await getBooks();
+
+    final malachiIndex = allBooks.indexOf("Malachi");
+    if (malachiIndex == -1) {
+      return []; // fallback if DB doesn’t have Malachi
+    }
+    return allBooks.sublist(0, malachiIndex + 1); // inclusive of Malachi
+  }
+
+  /// Returns all New Testament books, based on getBooks().
+  Future<List<String>> getNewTestamentBooks() async {
+    final allBooks = await getBooks();
+
+    final matthewIndex = allBooks.indexOf("Matthew");
+    if (matthewIndex == -1) {
+      return []; // fallback if DB doesn’t have Matthew
+    }
+    return allBooks.sublist(matthewIndex); // Matthew through the end
+  }
+
+  /// Convenience helper to return both in one map.
+  Future<Map<String, List<String>>> getBooksByTestament() async {
+    final ot = await getOldTestamentBooks();
+    final nt = await getNewTestamentBooks();
+    return {"Old Testament": ot, "New Testament": nt};
+  }
+}

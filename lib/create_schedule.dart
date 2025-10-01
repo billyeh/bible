@@ -14,8 +14,9 @@ class CreateSchedulePage extends StatefulWidget {
 }
 
 class _CreateSchedulePageState extends State<CreateSchedulePage> {
-  late Future<List<String>> _booksFuture;
   final BibleData _bibleData = BibleData();
+  Map<String, List<String>>? _booksByTestament;
+  bool _loadingBooks = true;
 
   final ScrollController _booksScrollController = ScrollController();
 
@@ -39,7 +40,65 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
   @override
   void initState() {
     super.initState();
-    _booksFuture = _bibleData.getBooks();
+    _loadBooks();
+  }
+
+  Future<void> _loadBooks() async {
+    final data = await _bibleData.getBooksByTestament();
+    setState(() {
+      _booksByTestament = data;
+      _loadingBooks = false;
+    });
+  }
+
+  Widget _buildGroupTile(String label, List<String> books) {
+    final allSelected = books.every(_selectedBooks.contains);
+    final someSelected = books.any(_selectedBooks.contains);
+
+    return CheckboxListTile(
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 0),
+      title: Text(
+        label,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      ),
+      value: allSelected ? true : (someSelected ? null : false),
+      tristate: true, // allows indeterminate state
+      activeColor: const Color(0xff1d7fff),
+      onChanged: (checked) {
+        setState(() {
+          if (checked == true) {
+            _selectedBooks.addAll(books);
+          } else {
+            _selectedBooks.removeAll(books);
+          }
+          _updateTotalVersesSelected();
+          _updateFromVersesPerDay();
+        });
+      },
+    );
+  }
+
+  Widget _buildBookTile(String book) {
+    final selected = _selectedBooks.contains(book);
+    return CheckboxListTile(
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 0),
+      title: Text(book, style: const TextStyle(fontSize: 16)),
+      value: selected,
+      activeColor: const Color(0xff1d7fff),
+      onChanged: (checked) {
+        setState(() {
+          if (checked == true) {
+            _selectedBooks.add(book);
+          } else {
+            _selectedBooks.remove(book);
+          }
+          _updateTotalVersesSelected();
+          _updateFromVersesPerDay();
+        });
+      },
+    );
   }
 
   void _updateFromVersesPerDay() {
@@ -284,6 +343,9 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat.yMMMd();
+    final otBooks = _booksByTestament?["Old Testament"] ?? [];
+    final ntBooks = _booksByTestament?["New Testament"] ?? [];
+    final isEnabled = _totalVersesSelected > 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -297,190 +359,169 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
       ),
       backgroundColor: const Color(0xFFF9F9F9),
       body: SafeArea(
-        child: FutureBuilder<List<String>>(
-          future: _booksFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(child: Text("Error: ${snapshot.error}"));
-            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Center(child: Text("No books found"));
-            }
-
-            final books = snapshot.data!;
-            final isEnabled = _totalVersesSelected > 0;
-
-            return Column(
-              children: [
-                // Scrollable form content
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 36),
+        child: _loadingBooks
+            ? const Center(child: CircularProgressIndicator())
+            : FutureBuilder<Map<String, List<String>>>(
+                future: _bibleData.getBooksByTestament(),
+                builder: (context, snapshot) {
+                  return Column(
                     children: [
-                      const SizedBox(height: 16),
-                      // Name field
-                      Text("Plan name", style: TextStyle(fontSize: 16)),
-                      TextField(
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: -4,
-                            vertical: 0,
-                          ),
-                        ),
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        controller: TextEditingController(text: _scheduleName),
-                        onChanged: (val) => _scheduleName = val,
-                      ),
-
-                      const SizedBox(height: 32),
-
-                      // Book selection
-                      const Text(
-                        "What are you reading?",
-                        style: TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        height: 220,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Scrollbar(
-                          controller: _booksScrollController,
-                          thumbVisibility: true,
-                          child: ListView(
-                            controller: _booksScrollController,
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            children: books.map((book) {
-                              final selected = _selectedBooks.contains(book);
-                              return CheckboxListTile(
-                                dense: true,
+                      // Scrollable form content
+                      Expanded(
+                        child: ListView(
+                          padding: const EdgeInsets.symmetric(horizontal: 36),
+                          children: [
+                            const SizedBox(height: 16),
+                            // Name field
+                            Text("Plan name", style: TextStyle(fontSize: 16)),
+                            TextField(
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
                                 contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 0,
+                                  horizontal: -4,
+                                  vertical: 0,
                                 ),
-                                title: Text(
-                                  book,
-                                  style: const TextStyle(fontSize: 16),
+                              ),
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              controller: TextEditingController(
+                                text: _scheduleName,
+                              ),
+                              onChanged: (val) => _scheduleName = val,
+                            ),
+
+                            const SizedBox(height: 32),
+
+                            // Book selection
+                            const Text(
+                              "What are you reading?",
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            const SizedBox(height: 16),
+                            Container(
+                              height: 220,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Scrollbar(
+                                controller: _booksScrollController,
+                                thumbVisibility: true,
+                                child: ListView(
+                                  controller: _booksScrollController,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
+                                  children: [
+                                    _buildGroupTile("Old Testament", otBooks),
+                                    ...otBooks.map(_buildBookTile),
+                                    _buildGroupTile("New Testament", ntBooks),
+                                    ...ntBooks.map(_buildBookTile),
+                                  ],
                                 ),
-                                value: selected,
-                                activeColor: const Color(0xff1d7fff),
-                                onChanged: (checked) {
-                                  setState(() {
-                                    if (checked == true) {
-                                      _selectedBooks.add(book);
-                                    } else {
-                                      _selectedBooks.remove(book);
-                                    }
-                                    _updateTotalVersesSelected();
-                                    _updateFromVersesPerDay();
-                                  });
-                                },
-                              );
-                            }).toList(),
-                          ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 32),
+
+                            // Reading speed
+                            const Text(
+                              "How fast do you want to go?",
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(child: _versesPerDayBar(isEnabled)),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Dates
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                InkWell(
+                                  onTap: isEnabled ? _pickStartDate : null,
+                                  child: Text(
+                                    "${dateFormat.format(_startDate)}  - ",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: isEnabled
+                                          ? Colors.black
+                                          : Colors.grey,
+                                    ),
+                                  ),
+                                ),
+                                InkWell(
+                                  onTap: isEnabled ? _pickEndDate : null,
+                                  child: Text(
+                                    dateFormat.format(_endDate),
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: isEnabled
+                                          ? Colors.black
+                                          : Colors.grey,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
 
-                      const SizedBox(height: 32),
-
-                      // Reading speed
-                      const Text(
-                        "How fast do you want to go?",
-                        style: TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(child: _versesPerDayBar(isEnabled)),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Dates
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          InkWell(
-                            onTap: isEnabled ? _pickStartDate : null,
-                            child: Text(
-                              "${dateFormat.format(_startDate)}  - ",
+                      // Bottom-aligned Create button
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(36, 16, 36, 36),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xff1d7fff),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: _selectedBooks.isEmpty
+                                ? null
+                                : () async {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text("Schedule created!"),
+                                      ),
+                                    );
+                                    final schedule = Schedule.create(
+                                      name: _scheduleName,
+                                      startDate: _startDate,
+                                      endDate: _endDate,
+                                      booksToRead: _selectedBooks.toList(),
+                                    );
+                                    await isar.writeTxn(() async {
+                                      await isar.schedules.put(schedule);
+                                    });
+                                    if (mounted) Navigator.pop(context);
+                                  },
+                            child: const Text(
+                              "Create Plan",
                               style: TextStyle(
-                                fontSize: 16,
-                                color: isEnabled ? Colors.black : Colors.grey,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
-                          InkWell(
-                            onTap: isEnabled ? _pickEndDate : null,
-                            child: Text(
-                              dateFormat.format(_endDate),
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: isEnabled ? Colors.black : Colors.grey,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ],
-                  ),
-                ),
-
-                // Bottom-aligned Create button
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(36, 16, 36, 36),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xff1d7fff),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      onPressed: _selectedBooks.isEmpty
-                          ? null
-                          : () async {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Schedule created!"),
-                                ),
-                              );
-                              final schedule = Schedule.create(
-                                name: _scheduleName,
-                                startDate: _startDate,
-                                endDate: _endDate,
-                                booksToRead: _selectedBooks.toList(),
-                              );
-                              await isar.writeTxn(() async {
-                                await isar.schedules.put(schedule);
-                              });
-                              if (mounted) Navigator.pop(context);
-                            },
-                      child: const Text(
-                        "Create Plan",
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
+                  );
+                },
+              ),
       ),
     );
   }
