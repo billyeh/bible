@@ -263,9 +263,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                       builder: (context, snapshot) {
                         final readingProgress = snapshot.data ?? 0.0;
                         final timeProgress = s.getTimeProgress(DateTime.now());
-                        final circleColor = readingProgress >= timeProgress
-                            ? const Color(0xff1d7fff)
-                            : Colors.grey.shade300;
+                        final circleColor = const Color(0xff1d7fff);
 
                         return TweenAnimationBuilder<double>(
                           key: ValueKey(readingProgress),
@@ -283,7 +281,6 @@ class _SchedulesPageState extends State<SchedulesPage> {
                                     child: LinearProgressIndicator(
                                       value: t * readingProgress,
                                       minHeight: 8,
-                                      backgroundColor: Colors.grey.shade300,
                                       color: const Color(0xff1d7fff),
                                     ),
                                   ),
