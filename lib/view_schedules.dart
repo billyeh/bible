@@ -20,6 +20,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
   List<Schedule> _schedules = [];
   bool _loading = true;
   final BibleData _bibleData = BibleData();
+  String _filter = 'unfinished';
 
   @override
   void initState() {
@@ -29,10 +30,26 @@ class _SchedulesPageState extends State<SchedulesPage> {
 
   Future<void> _loadSchedules() async {
     setState(() => _loading = true);
-    _schedules = await isar.schedules.where().findAll();
+
+    final schedules = await isar.schedules.where().findAll();
+    final filtered = <Schedule>[];
+
+    for (final s in schedules) {
+      final finished = await s.isScheduleFinished(_bibleData);
+      if (_filter == 'finished' && finished) {
+        filtered.add(s);
+      } else if (_filter == 'unfinished' && !finished) {
+        filtered.add(s);
+      } else if (_filter == 'all') {
+        filtered.add(s);
+      }
+    }
+    _schedules = filtered;
+
     for (final s in _schedules) {
       await s.computeFormattedBooks(_bibleData);
     }
+
     setState(() => _loading = false);
   }
 
@@ -47,6 +64,15 @@ class _SchedulesPageState extends State<SchedulesPage> {
   Widget build(BuildContext context) {
     final dateFormat = DateFormat.yMMMd();
 
+    late String noReadingPlans;
+    if (_filter == 'finished') {
+      noReadingPlans = "No finished reading plans.";
+    } else if (_filter == 'unfinished') {
+      noReadingPlans = "No unfinished reading plans.";
+    } else {
+      noReadingPlans = "No reading plans yet.";
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
       body: SafeArea(
@@ -56,12 +82,34 @@ class _SchedulesPageState extends State<SchedulesPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 40),
-              const Padding(
-                padding: EdgeInsets.only(left: 14),
-                child: Text(
-                  "Reading Plans",
-                  style: TextStyle(fontSize: 40, fontWeight: FontWeight.w600),
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Reading Plans",
+                    style: TextStyle(fontSize: 40, fontWeight: FontWeight.w600),
+                  ),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.filter_list, size: 24),
+                    onSelected: (value) async {
+                      setState(() {
+                        _filter = value;
+                      });
+                      await _loadSchedules();
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(value: 'all', child: Text("All")),
+                      const PopupMenuItem(
+                        value: 'finished',
+                        child: Text("Finished"),
+                      ),
+                      const PopupMenuItem(
+                        value: 'unfinished',
+                        child: Text("Unfinished"),
+                      ),
+                    ],
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
 
@@ -69,7 +117,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                 child: _loading
                     ? const Center(child: CircularProgressIndicator())
                     : _schedules.isEmpty
-                    ? const Center(child: Text("No reading plans yet."))
+                    ? Center(child: Text(noReadingPlans))
                     : ListView.separated(
                         padding: const EdgeInsets.only(left: 10, right: 12),
                         itemCount: _schedules.length,
