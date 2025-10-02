@@ -73,6 +73,9 @@ class _SchedulesPageState extends State<SchedulesPage> {
       noReadingPlans = "No reading plans yet.";
     }
 
+    const TextStyle unselected = TextStyle();
+    const TextStyle selected = TextStyle(fontWeight: FontWeight.bold);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
       body: SafeArea(
@@ -98,14 +101,28 @@ class _SchedulesPageState extends State<SchedulesPage> {
                       await _loadSchedules();
                     },
                     itemBuilder: (context) => [
-                      const PopupMenuItem(value: 'all', child: Text("All")),
-                      const PopupMenuItem(
-                        value: 'finished',
-                        child: Text("Finished"),
+                      PopupMenuItem(
+                        value: 'all',
+                        child: Text(
+                          "All",
+                          style: _filter == 'all' ? selected : unselected,
+                        ),
                       ),
-                      const PopupMenuItem(
+                      PopupMenuItem(
+                        value: 'finished',
+                        child: Text(
+                          "Finished",
+                          style: _filter == 'finished' ? selected : unselected,
+                        ),
+                      ),
+                      PopupMenuItem(
                         value: 'unfinished',
-                        child: Text("Unfinished"),
+                        child: Text(
+                          "Unfinished",
+                          style: _filter == 'unfinished'
+                              ? selected
+                              : unselected,
+                        ),
                       ),
                     ],
                   ),
