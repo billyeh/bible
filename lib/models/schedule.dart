@@ -36,6 +36,13 @@ class Schedule {
       ..endDate = _normalize(endDate)
       ..booksToRead = booksToRead;
   }
+
+  // Computed compressed list of books for displaying.
+  @ignore
+  late String formattedBooks;
+  Future<void> computeFormattedBooks(BibleData bibleData) async {
+    formattedBooks = await bibleData.formatBookSelection(booksToRead);
+  }
 }
 
 extension ScheduleExtensions on Schedule {

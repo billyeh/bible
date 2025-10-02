@@ -9,54 +9,6 @@ import 'package:bible/reading.dart';
 import 'package:bible/bible_data/bible_data.dart';
 import 'models/schedule.dart';
 
-class LoadingDots extends StatefulWidget {
-  const LoadingDots({super.key});
-
-  @override
-  State<LoadingDots> createState() => _LoadingDotsState();
-}
-
-class _LoadingDotsState extends State<LoadingDots>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<int> _dotCount;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    )..repeat();
-
-    // Map controller value (0.0 → 1.0) into 1–3 dots
-    _dotCount = StepTween(begin: 1, end: 3).animate(_controller);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _dotCount,
-      builder: (context, _) {
-        return Text(
-          '.' * _dotCount.value,
-          style: const TextStyle(
-            fontSize: 16,
-            color: Colors.grey,
-            fontStyle: FontStyle.italic,
-          ),
-        );
-      },
-    );
-  }
-}
-
 class SchedulesPage extends StatefulWidget {
   const SchedulesPage({super.key});
 
@@ -67,6 +19,7 @@ class SchedulesPage extends StatefulWidget {
 class _SchedulesPageState extends State<SchedulesPage> {
   List<Schedule> _schedules = [];
   bool _loading = true;
+  final BibleData _bibleData = BibleData();
 
   @override
   void initState() {
@@ -77,6 +30,9 @@ class _SchedulesPageState extends State<SchedulesPage> {
   Future<void> _loadSchedules() async {
     setState(() => _loading = true);
     _schedules = await isar.schedules.where().findAll();
+    for (final s in _schedules) {
+      await s.computeFormattedBooks(_bibleData);
+    }
     setState(() => _loading = false);
   }
 
@@ -89,7 +45,6 @@ class _SchedulesPageState extends State<SchedulesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final BibleData bibleData = BibleData();
     final dateFormat = DateFormat.yMMMd();
 
     return Scaffold(
@@ -128,7 +83,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                               schedule,
                               dateFormat,
                               index,
-                              bibleData,
+                              _bibleData,
                             ),
                           );
                         },
@@ -233,18 +188,9 @@ class _SchedulesPageState extends State<SchedulesPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    FutureBuilder<String>(
-                      future: bibleData.formatBookSelection(s.booksToRead),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.done &&
-                            snapshot.hasData) {
-                          return Text(
-                            snapshot.data!,
-                            style: const TextStyle(fontSize: 16),
-                          );
-                        }
-                        return const LoadingDots();
-                      },
+                    Text(
+                      s.formattedBooks,
+                      style: const TextStyle(fontSize: 16),
                     ),
                     const SizedBox(height: 12),
                     FutureBuilder<double>(
