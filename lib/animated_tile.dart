@@ -30,7 +30,7 @@ class _AnimatedTileState extends State<AnimatedTile> {
           _hasAnimated = true; // mark as animated
 
           // Small stagger based on nearby index
-          final delayMs = (widget.staggerIndex * 20) % 100; // 0–100ms cap
+          final delayMs = (widget.staggerIndex * 5) % 20;
           Future.delayed(Duration(milliseconds: delayMs), () {
             if (mounted) setState(() => _visible = true);
           });
