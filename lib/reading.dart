@@ -26,8 +26,13 @@ class _ReadingPageState extends State<ReadingPage> {
   bool _isTogglingAll = false;
   bool _isPageLoading = true;
 
-  // Fast lookup for verses read
   late Set<String> _versesReadSet;
+
+  final Map<int, ScrollController> _scrollControllers = {};
+
+  ScrollController _getScrollController(int pageIndex) {
+    return _scrollControllers.putIfAbsent(pageIndex, () => ScrollController());
+  }
 
   @override
   void initState() {
@@ -62,6 +67,9 @@ class _ReadingPageState extends State<ReadingPage> {
 
   @override
   void dispose() {
+    for (final controller in _scrollControllers.values) {
+      controller.dispose();
+    }
     _pageController.dispose();
     super.dispose();
   }
@@ -81,7 +89,7 @@ class _ReadingPageState extends State<ReadingPage> {
   }
 
   double _getOverallProgress() {
-    final totalVerses = verses.length; // total in schedule
+    final totalVerses = verses.length;
     final readCount = verses
         .where(
           (v) => _versesReadSet.contains(
@@ -177,7 +185,19 @@ class _ReadingPageState extends State<ReadingPage> {
       await widget.schedule.versesRead.save();
     });
 
-    setState(() {}); // only necessary to refresh FAB and tile
+    setState(() {});
+  }
+
+  Future<void> _toggleAllAbove(int index) async {
+    if (verses.isEmpty) return;
+
+    for (int i = 0; i <= index; i++) {
+      final v = verses[i];
+      final key = '${v['book']}:${v['chapter']}:${v['verse']}';
+      if (!_versesReadSet.contains(key)) {
+        await _toggleVerse(v);
+      }
+    }
   }
 
   @override
@@ -221,6 +241,7 @@ class _ReadingPageState extends State<ReadingPage> {
       ),
       body: Column(
         children: [
+          // Progress bar
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Row(
@@ -251,7 +272,7 @@ class _ReadingPageState extends State<ReadingPage> {
             ),
           ),
 
-          // Expanded PageView for daily readings
+          // PageView with draggable vertical scrollbars
           Expanded(
             child: PageView.builder(
               controller: _pageController,
@@ -267,34 +288,47 @@ class _ReadingPageState extends State<ReadingPage> {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 10,
-                  ),
-                  itemCount: verses.length,
-                  itemBuilder: (context, index) {
-                    final v = Map<String, dynamic>.from(verses[index]);
-                    v['index'] = index;
+                final scrollController = _getScrollController(index);
 
-                    return VerseTile(
-                      verse: v,
-                      isRead: _versesReadSet.contains(
-                        '${v['book']}:${v['chapter']}:${v['verse']}',
-                      ),
-                      onToggle: (newState) async {
-                        await _toggleVerse(v);
-                        setState(() {}); // rebuild tiles & progress bar
-                      },
-                    );
-                  },
+                return Scrollbar(
+                  controller: scrollController,
+                  thumbVisibility: false,
+                  interactive: true,
+                  thickness: 8,
+                  radius: const Radius.circular(4),
+                  child: ListView.builder(
+                    controller: scrollController,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
+                    itemCount: verses.length,
+                    itemBuilder: (context, idx) {
+                      final v = Map<String, dynamic>.from(verses[idx]);
+
+                      return VerseTile(
+                        verse: v,
+                        index: index,
+                        isRead: _versesReadSet.contains(
+                          '${v['book']}:${v['chapter']}:${v['verse']}',
+                        ),
+                        onToggle: (newState) async {
+                          await _toggleVerse(v);
+                          setState(() {});
+                        },
+                        onLongPress: () async {
+                          await _toggleAllAbove(idx);
+                          setState(() {});
+                        },
+                      );
+                    },
+                  ),
                 );
               },
             ),
           ),
         ],
       ),
-
       floatingActionButton: FloatingActionButton(
         onPressed: verses.isEmpty || _isTogglingAll || _isPageLoading
             ? null
@@ -331,14 +365,18 @@ class _ReadingPageState extends State<ReadingPage> {
 
 class VerseTile extends StatelessWidget {
   final Map<String, dynamic> verse;
+  final int index;
   final bool isRead;
   final void Function(bool isNowRead) onToggle;
+  final VoidCallback? onLongPress;
 
   const VerseTile({
     super.key,
     required this.verse,
+    required this.index,
     required this.isRead,
     required this.onToggle,
+    this.onLongPress,
   });
 
   @override
@@ -357,6 +395,7 @@ class VerseTile extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: () => onToggle(!isRead),
+          onLongPress: onLongPress,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Column(
