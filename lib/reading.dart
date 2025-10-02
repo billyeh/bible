@@ -66,6 +66,36 @@ class _ReadingPageState extends State<ReadingPage> {
     super.dispose();
   }
 
+  int _getVersesToRead() {
+    return verses.length;
+  }
+
+  int _getVersesRead() {
+    return verses
+        .where(
+          (v) => _versesReadSet.contains(
+            '${v['book']}:${v['chapter']}:${v['verse']}',
+          ),
+        )
+        .length;
+  }
+
+  double _getOverallProgress() {
+    final totalVerses = verses.length; // total in schedule
+    final readCount = verses
+        .where(
+          (v) => _versesReadSet.contains(
+            '${v['book']}:${v['chapter']}:${v['verse']}',
+          ),
+        )
+        .length;
+    return totalVerses == 0 ? 0.0 : readCount / totalVerses;
+  }
+
+  String _getProgressText() {
+    return "${_getVersesRead()}/${_getVersesToRead()}";
+  }
+
   Future<void> _loadVersesForDate(DateTime date) async {
     setState(() => _isPageLoading = true);
 
@@ -189,43 +219,82 @@ class _ReadingPageState extends State<ReadingPage> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-        child: PageView.builder(
-          controller: _pageController,
-          itemCount: totalDays,
-          onPageChanged: (index) {
-            final newDate = widget.schedule.startDate.add(
-              Duration(days: index),
-            );
-            _loadVersesForDate(newDate);
-          },
-          itemBuilder: (context, index) {
-            if (verses.isEmpty) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            return ListView.builder(
-              itemCount: verses.length,
-              itemBuilder: (context, index) {
-                final v = Map<String, dynamic>.from(verses[index]);
-                v['index'] = index;
-
-                return VerseTile(
-                  verse: v,
-                  isRead: _versesReadSet.contains(
-                    '${v['book']}:${v['chapter']}:${v['verse']}',
+      body: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: _getOverallProgress()),
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOut,
+                    builder: (context, value, child) {
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: value,
+                          minHeight: 8,
+                          color: const Color(0xff1d7fff),
+                        ),
+                      );
+                    },
                   ),
-                  onToggle: (newState) async {
-                    await _toggleVerse(v);
-                    setState(() {}); // rebuild tiles to reflect new state
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  _getProgressText(),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+
+          // Expanded PageView for daily readings
+          Expanded(
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: totalDays,
+              onPageChanged: (index) {
+                final newDate = widget.schedule.startDate.add(
+                  Duration(days: index),
+                );
+                _loadVersesForDate(newDate);
+              },
+              itemBuilder: (context, index) {
+                if (verses.isEmpty) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  itemCount: verses.length,
+                  itemBuilder: (context, index) {
+                    final v = Map<String, dynamic>.from(verses[index]);
+                    v['index'] = index;
+
+                    return VerseTile(
+                      verse: v,
+                      isRead: _versesReadSet.contains(
+                        '${v['book']}:${v['chapter']}:${v['verse']}',
+                      ),
+                      onToggle: (newState) async {
+                        await _toggleVerse(v);
+                        setState(() {}); // rebuild tiles & progress bar
+                      },
+                    );
                   },
                 );
               },
-            );
-          },
-        ),
+            ),
+          ),
+        ],
       ),
+
       floatingActionButton: FloatingActionButton(
         onPressed: verses.isEmpty || _isTogglingAll || _isPageLoading
             ? null
