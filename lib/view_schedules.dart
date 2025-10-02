@@ -9,6 +9,54 @@ import 'package:bible/reading.dart';
 import 'package:bible/bible_data/bible_data.dart';
 import 'models/schedule.dart';
 
+class LoadingDots extends StatefulWidget {
+  const LoadingDots({super.key});
+
+  @override
+  State<LoadingDots> createState() => _LoadingDotsState();
+}
+
+class _LoadingDotsState extends State<LoadingDots>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<int> _dotCount;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    )..repeat();
+
+    // Map controller value (0.0 → 1.0) into 1–3 dots
+    _dotCount = StepTween(begin: 1, end: 3).animate(_controller);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _dotCount,
+      builder: (context, _) {
+        return Text(
+          '.' * _dotCount.value,
+          style: const TextStyle(
+            fontSize: 16,
+            color: Colors.grey,
+            fontStyle: FontStyle.italic,
+          ),
+        );
+      },
+    );
+  }
+}
+
 class SchedulesPage extends StatefulWidget {
   const SchedulesPage({super.key});
 
@@ -41,6 +89,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final BibleData bibleData = BibleData();
     final dateFormat = DateFormat.yMMMd();
 
     return Scaffold(
@@ -79,6 +128,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                               schedule,
                               dateFormat,
                               index,
+                              bibleData,
                             ),
                           );
                         },
@@ -104,7 +154,12 @@ class _SchedulesPageState extends State<SchedulesPage> {
     );
   }
 
-  Widget _buildScheduleTile(Schedule s, DateFormat dateFormat, int index) {
+  Widget _buildScheduleTile(
+    Schedule s,
+    DateFormat dateFormat,
+    int index,
+    BibleData bibleData,
+  ) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: const Duration(milliseconds: 500),
@@ -126,7 +181,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
             await Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => ReadingPage(schedule: s, bible: BibleData()),
+                builder: (_) => ReadingPage(schedule: s, bible: bibleData),
               ),
             );
             _loadSchedules(); // reload in case reading progress changed
@@ -178,13 +233,22 @@ class _SchedulesPageState extends State<SchedulesPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      s.booksToRead.join(', '),
-                      style: const TextStyle(fontSize: 16),
+                    FutureBuilder<String>(
+                      future: bibleData.formatBookSelection(s.booksToRead),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.done &&
+                            snapshot.hasData) {
+                          return Text(
+                            snapshot.data!,
+                            style: const TextStyle(fontSize: 16),
+                          );
+                        }
+                        return const LoadingDots();
+                      },
                     ),
                     const SizedBox(height: 12),
                     FutureBuilder<double>(
-                      future: s.getReadingProgress(BibleData()),
+                      future: s.getReadingProgress(bibleData),
                       builder: (context, snapshot) {
                         final readingProgress = snapshot.data ?? 0.0;
                         final timeProgress = s.getTimeProgress(DateTime.now());
@@ -247,7 +311,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                   top: 12,
                   right: 0,
                   child: FutureBuilder<bool>(
-                    future: s.isReadingDone(BibleData(), DateTime.now()),
+                    future: s.isReadingDone(bibleData, DateTime.now()),
                     builder: (context, snapshot) {
                       if (!snapshot.hasData) {
                         return const SizedBox(width: 12, height: 12);

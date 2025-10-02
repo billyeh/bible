@@ -138,3 +138,63 @@ extension TestamentBooks on BibleData {
     return {"Old Testament": ot, "New Testament": nt};
   }
 }
+
+extension ScheduleFormatting on BibleData {
+  Future<String> formatBookSelection(List<String> selectedBooks) async {
+    if (selectedBooks.isEmpty) return 'No books';
+
+    final allBooks = await getBooks();
+    final otBooks = await getOldTestamentBooks();
+    final ntBooks = await getNewTestamentBooks();
+
+    final bookIndex = {
+      for (var i = 0; i < allBooks.length; i++) allBooks[i]: i,
+    };
+
+    // Sort selected books in canonical Bible order
+    final sorted = [...selectedBooks]
+      ..sort((a, b) => bookIndex[a]!.compareTo(bookIndex[b]!));
+
+    // Whole Bible
+    if (sorted.length == allBooks.length) return 'Whole Bible';
+
+    final ranges = <String>[];
+    int start = 0;
+
+    while (start < sorted.length) {
+      int end = start;
+
+      // Expand consecutive run
+      while (end + 1 < sorted.length &&
+          bookIndex[sorted[end + 1]] == bookIndex[sorted[end]]! + 1) {
+        // Stop if crossing OT → NT boundary
+        final isCurrentOT = otBooks.contains(sorted[end]);
+        final isNextOT = otBooks.contains(sorted[end + 1]);
+        final isCurrentNT = ntBooks.contains(sorted[end]);
+        final isNextNT = ntBooks.contains(sorted[end + 1]);
+        if ((isCurrentOT && isNextNT) || (isCurrentNT && isNextOT)) break;
+
+        end++;
+      }
+
+      final rangeBooks = sorted.sublist(start, end + 1);
+
+      // Collapse full OT / NT runs
+      if (rangeBooks.length == otBooks.length &&
+          rangeBooks.every((b) => otBooks.contains(b))) {
+        ranges.add('Old Testament');
+      } else if (rangeBooks.length == ntBooks.length &&
+          rangeBooks.every((b) => ntBooks.contains(b))) {
+        ranges.add('New Testament');
+      } else if (rangeBooks.length == 1) {
+        ranges.add(rangeBooks.first);
+      } else {
+        ranges.add('${rangeBooks.first} - ${rangeBooks.last}');
+      }
+
+      start = end + 1;
+    }
+
+    return ranges.join(', ');
+  }
+}

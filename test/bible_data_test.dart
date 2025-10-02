@@ -6,6 +6,7 @@ void main() {
   // Initialize FFI before using openDatabase
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
+  TestWidgetsFlutterBinding.ensureInitialized();
 
   test('getBooks returns data from in-memory database', () async {
     final db = await openDatabase(
@@ -172,5 +173,174 @@ void main() {
     expect(verses[4]['text'], 'And Moses said...');
 
     await db.close();
+  });
+
+  group('formatBookSelection', () {
+    late BibleData bibleData;
+    final allBooks = [
+      'Genesis',
+      'Exodus',
+      'Leviticus',
+      'Numbers',
+      'Deuteronomy',
+      'Joshua',
+      'Judges',
+      'Ruth',
+      '1 Samuel',
+      '2 Samuel',
+      '1 Kings',
+      '2 Kings',
+      '1 Chronicles',
+      '2 Chronicles',
+      'Ezra',
+      'Nehemiah',
+      'Esther',
+      'Job',
+      'Psalms',
+      'Proverbs',
+      'Ecclesiastes',
+      'Song of Solomon',
+      'Isaiah',
+      'Jeremiah',
+      'Lamentations',
+      'Ezekiel',
+      'Daniel',
+      'Hosea',
+      'Joel',
+      'Amos',
+      'Obadiah',
+      'Jonah',
+      'Micah',
+      'Nahum',
+      'Habakkuk',
+      'Zephaniah',
+      'Haggai',
+      'Zechariah',
+      'Malachi',
+      'Matthew',
+      'Mark',
+      'Luke',
+      'John',
+      'Acts',
+      'Romans',
+      '1 Corinthians',
+      '2 Corinthians',
+      'Galatians',
+      'Ephesians',
+      'Philippians',
+      'Colossians',
+      '1 Thessalonians',
+      '2 Thessalonians',
+      '1 Timothy',
+      '2 Timothy',
+      'Titus',
+      'Philemon',
+      'Hebrews',
+      'James',
+      '1 Peter',
+      '2 Peter',
+      '1 John',
+      '2 John',
+      '3 John',
+      'Jude',
+      'Revelation',
+    ];
+
+    setUp(() async {
+      final db = await databaseFactory.openDatabase(
+        inMemoryDatabasePath,
+        options: OpenDatabaseOptions(
+          version: 1,
+          onCreate: (db, version) async {
+            await db.execute('CREATE TABLE key_english (b INTEGER, n TEXT)');
+            for (var i = 0; i < allBooks.length; i++) {
+              await db.insert('key_english', {'b': i + 1, 'n': allBooks[i]});
+            }
+          },
+        ),
+      );
+
+      bibleData = BibleData(db: db);
+    });
+
+    test('returns Whole Bible when all books are selected', () async {
+      final allBooks = await bibleData.getBooks();
+      final result = await bibleData.formatBookSelection(allBooks);
+      expect(result, 'Whole Bible');
+    });
+
+    test('returns Old Testament when all OT books are selected', () async {
+      final otBooks = await bibleData.getOldTestamentBooks();
+      final result = await bibleData.formatBookSelection(otBooks);
+      expect(result, 'Old Testament');
+    });
+
+    test('returns New Testament when all NT books are selected', () async {
+      final ntBooks = await bibleData.getNewTestamentBooks();
+      final result = await bibleData.formatBookSelection(ntBooks);
+      expect(result, 'New Testament');
+    });
+
+    test('compresses consecutive run of books', () async {
+      final selected = ['Genesis', 'Exodus', 'Leviticus'];
+      final result = await bibleData.formatBookSelection(selected);
+      expect(result, 'Genesis - Leviticus');
+    });
+
+    test('handles mixed runs and singletons', () async {
+      final selected = [
+        'Genesis',
+        'Exodus',
+        'Leviticus',
+        'Psalms',
+        'Matthew',
+        'Mark',
+        'Luke',
+      ];
+      final result = await bibleData.formatBookSelection(selected);
+      expect(result, 'Genesis - Leviticus, Psalms, Matthew - Luke');
+    });
+
+    test('single book returns the book name', () async {
+      final selected = ['Genesis'];
+      final result = await bibleData.formatBookSelection(selected);
+      expect(result, 'Genesis');
+    });
+
+    test(
+      'partial OT run that matches start to end returns Old Testament',
+      () async {
+        final otBooks = await bibleData.getOldTestamentBooks();
+        final result = await bibleData.formatBookSelection(otBooks);
+        expect(result, 'Old Testament');
+      },
+    );
+
+    test('empty selection returns "No books"', () async {
+      final result = await bibleData.formatBookSelection([]);
+      expect(result, 'No books');
+    });
+
+    test('Mixed full OT run + single NT books', () async {
+      final otBooks = await bibleData.getOldTestamentBooks();
+      final selected = [...otBooks, 'Matthew', 'Mark'];
+      final result = await bibleData.formatBookSelection(selected);
+      // OT collapses, NT runs compress normally
+      expect(result, 'Old Testament, Matthew - Mark');
+    });
+
+    test('Multiple consecutive runs across OT and NT', () async {
+      final selected = [
+        'Genesis',
+        'Exodus',
+        'Leviticus',
+        'Matthew',
+        'Mark',
+        'Luke',
+        'Revelation',
+      ];
+      final result = await bibleData.formatBookSelection(selected);
+      expect(result, 'Genesis - Leviticus, Matthew - Luke, Revelation');
+    });
   });
 }
