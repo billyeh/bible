@@ -210,10 +210,19 @@ class _ReadingPageState extends State<ReadingPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
       appBar: AppBar(
-        title: Text(
-          "Reading for ${dateFormat.format(selectedDate)}",
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
+        title: Hero(
+          tag: "schedule-title-${widget.schedule.id}",
+          child: Material(
+            color: Colors.transparent,
+            child: Text(
+              widget.schedule.name,
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ),
         ),
+
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
@@ -240,6 +249,7 @@ class _ReadingPageState extends State<ReadingPage> {
         ],
       ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Progress bar
           Container(
@@ -269,6 +279,14 @@ class _ReadingPageState extends State<ReadingPage> {
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ],
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+            child: Text(
+              "Reading for ${dateFormat.format(selectedDate)}",
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
           ),
 
