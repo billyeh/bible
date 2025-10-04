@@ -63,6 +63,8 @@ class _SchedulesPageState extends State<SchedulesPage> {
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat.yMMMd();
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     late String noReadingPlans;
     if (_filter == 'finished') {
@@ -74,7 +76,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9F9),
+      backgroundColor: colorScheme.background,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -85,12 +87,17 @@ class _SchedulesPageState extends State<SchedulesPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     "Reading Plans",
-                    style: TextStyle(fontSize: 40, fontWeight: FontWeight.w600),
+                    style: textTheme.headlineLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   PopupMenuButton<String>(
-                    icon: const Icon(Icons.filter_list, size: 24),
+                    icon: Icon(
+                      Icons.filter_list,
+                      size: textTheme.headlineLarge?.fontSize,
+                    ),
                     onSelected: (value) async {
                       setState(() {
                         _filter = value;
@@ -129,7 +136,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
 
               Expanded(
                 child: _loading
@@ -137,7 +144,6 @@ class _SchedulesPageState extends State<SchedulesPage> {
                     : _schedules.isEmpty
                     ? Center(child: Text(noReadingPlans))
                     : ListView.separated(
-                        padding: const EdgeInsets.only(left: 10, right: 12),
                         itemCount: _schedules.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 28),
                         itemBuilder: (context, index) {
@@ -150,19 +156,19 @@ class _SchedulesPageState extends State<SchedulesPage> {
                               dateFormat,
                               index,
                               _bibleData,
+                              colorScheme,
+                              textTheme,
                             ),
                           );
                         },
                       ),
               ),
-              const SizedBox(height: 100),
+              SizedBox(height: 100),
             ],
           ),
         ),
       ),
-
       floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xff1d7fff),
         onPressed: () async {
           await Navigator.push(
             context,
@@ -180,6 +186,8 @@ class _SchedulesPageState extends State<SchedulesPage> {
     DateFormat dateFormat,
     int index,
     BibleData bibleData,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
   ) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -205,7 +213,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                 builder: (_) => ReadingPage(schedule: s, bible: bibleData),
               ),
             );
-            _loadSchedules(); // reload in case reading progress changed
+            _loadSchedules();
           },
           onLongPress: () async {
             final confirm =
@@ -215,6 +223,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                     title: const Text("Delete Schedule"),
                     content: Text(
                       "Are you sure you want to delete '${s.name}'?",
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     actions: [
                       TextButton(
@@ -238,81 +247,90 @@ class _SchedulesPageState extends State<SchedulesPage> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      s.name,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "${dateFormat.format(s.startDate)} - ${dateFormat.format(s.endDate)}",
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.grey.shade700,
+                    Hero(
+                      tag: "schedule-title-${s.id}", // unique per schedule
+                      child: Text(
+                        s.name,
+                        style: textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      s.formattedBooks,
-                      style: const TextStyle(fontSize: 16),
+                    Hero(
+                      tag: "schedule-dates-${s.id}",
+                      child: Text(
+                        "${dateFormat.format(s.startDate)} - ${dateFormat.format(s.endDate)}",
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: textTheme.bodyMedium?.color?.withOpacity(0.7),
+                        ),
+                      ),
                     ),
+                    const SizedBox(height: 8),
+                    Text(s.formattedBooks, style: textTheme.bodyMedium),
                     const SizedBox(height: 12),
-                    FutureBuilder<double>(
-                      future: s.getReadingProgress(bibleData),
-                      builder: (context, snapshot) {
-                        final readingProgress = snapshot.data ?? 0.0;
-                        final timeProgress = s.getTimeProgress(DateTime.now());
-                        final circleColor = const Color(0xff1d7fff);
+                    Hero(
+                      tag: "schedule-progress-${s.id}",
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 1.5),
+                        child: FutureBuilder<double>(
+                          future: s.getReadingProgress(bibleData),
+                          builder: (context, snapshot) {
+                            final readingProgress = snapshot.data ?? 0.0;
+                            final timeProgress = s.getTimeProgress(
+                              DateTime.now(),
+                            );
+                            final primary = colorScheme.primary;
 
-                        return TweenAnimationBuilder<double>(
-                          key: ValueKey(readingProgress),
-                          tween: Tween(begin: 0.0, end: 1),
-                          duration: const Duration(milliseconds: 500),
-                          curve: Curves.easeOut,
-                          builder: (context, t, child) {
-                            return SizedBox(
-                              height: 16,
-                              child: Stack(
-                                alignment: Alignment.centerLeft,
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(4),
-                                    child: LinearProgressIndicator(
-                                      value: t * readingProgress,
-                                      minHeight: 8,
-                                      color: const Color(0xff1d7fff),
-                                    ),
-                                  ),
-                                  LayoutBuilder(
-                                    builder: (context, constraints) {
-                                      final width = constraints.maxWidth;
-                                      final circlePosition =
-                                          t * (width - 12) * timeProgress;
-                                      return Transform.translate(
-                                        offset: Offset(circlePosition, 0),
-                                        child: Container(
-                                          width: 12,
-                                          height: 12,
-                                          decoration: BoxDecoration(
-                                            color: circleColor,
-                                            border: Border.all(
-                                              color: circleColor,
-                                              width: 1.5,
-                                            ),
-                                            shape: BoxShape.circle,
-                                          ),
+                            return TweenAnimationBuilder<double>(
+                              key: ValueKey(readingProgress),
+                              tween: Tween(begin: 0.0, end: 1),
+                              duration: const Duration(milliseconds: 500),
+                              curve: Curves.easeOut,
+                              builder: (context, t, child) {
+                                return SizedBox(
+                                  height: 16,
+                                  child: Stack(
+                                    alignment: Alignment.centerLeft,
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(4),
+                                        child: LinearProgressIndicator(
+                                          value: t * readingProgress,
+                                          minHeight: 8,
+                                          color: primary,
                                         ),
-                                      );
-                                    },
+                                      ),
+                                      LayoutBuilder(
+                                        builder: (context, constraints) {
+                                          final width = constraints.maxWidth;
+                                          final circlePosition =
+                                              t * (width - 12) * timeProgress;
+                                          return Transform.translate(
+                                            offset: Offset(circlePosition, 0),
+                                            child: Container(
+                                              width: 12,
+                                              height: 12,
+                                              decoration: BoxDecoration(
+                                                color: primary,
+                                                border: Border.all(
+                                                  color: primary,
+                                                  width: 1.5,
+                                                ),
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
+                                );
+                              },
                             );
                           },
-                        );
-                      },
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -335,7 +353,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                           decoration: BoxDecoration(
                             color: done
                                 ? Colors.transparent
-                                : const Color(0xff1d7fff),
+                                : colorScheme.primary,
                             shape: BoxShape.circle,
                           ),
                         ),

@@ -27,7 +27,6 @@ class _ReadingPageState extends State<ReadingPage> {
   bool _isPageLoading = true;
 
   late Set<String> _versesReadSet;
-
   final Map<int, ScrollController> _scrollControllers = {};
 
   ScrollController _getScrollController(int pageIndex) {
@@ -42,7 +41,7 @@ class _ReadingPageState extends State<ReadingPage> {
         .map((v) => '${v.book}:${v.chapter}:${v.verse}')
         .toSet();
 
-    // Ensure selectedDate is within schedule.
+    // Ensure selectedDate is within schedule
     if (!widget.schedule.isAfterOrOnStartDate(DateTime.now())) {
       selectedDate = widget.schedule.startDate;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -74,9 +73,7 @@ class _ReadingPageState extends State<ReadingPage> {
     super.dispose();
   }
 
-  int _getVersesToRead() {
-    return verses.length;
-  }
+  int _getVersesToRead() => verses.length;
 
   int _getVersesRead() {
     return verses
@@ -90,19 +87,11 @@ class _ReadingPageState extends State<ReadingPage> {
 
   double _getOverallProgress() {
     final totalVerses = verses.length;
-    final readCount = verses
-        .where(
-          (v) => _versesReadSet.contains(
-            '${v['book']}:${v['chapter']}:${v['verse']}',
-          ),
-        )
-        .length;
+    final readCount = _getVersesRead();
     return totalVerses == 0 ? 0.0 : readCount / totalVerses;
   }
 
-  String _getProgressText() {
-    return "${_getVersesRead()}/${_getVersesToRead()}";
-  }
+  String _getProgressText() => "${_getVersesRead()}/${_getVersesToRead()}";
 
   Future<void> _loadVersesForDate(DateTime date) async {
     setState(() => _isPageLoading = true);
@@ -202,33 +191,39 @@ class _ReadingPageState extends State<ReadingPage> {
 
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat.MMMd();
+    final dateFormat = DateFormat.yMMMd();
     final totalDays =
         widget.schedule.endDate.difference(widget.schedule.startDate).inDays +
         1;
 
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9F9),
+      backgroundColor: colorScheme.background,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
         title: Hero(
           tag: "schedule-title-${widget.schedule.id}",
           child: Material(
             color: Colors.transparent,
             child: Text(
               widget.schedule.name,
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+              style: textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ),
-
-        backgroundColor: Colors.transparent,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.calendar_today),
+            icon: Icon(
+              Icons.calendar_today,
+              color: colorScheme.onBackground,
+              size: textTheme.titleLarge?.fontSize,
+            ),
             onPressed: () async {
               final picked = await showDatePicker(
                 context: context,
@@ -251,46 +246,57 @@ class _ReadingPageState extends State<ReadingPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Progress bar
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0, end: _getOverallProgress()),
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeOut,
-                    builder: (context, value, child) {
-                      return ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: value,
-                          minHeight: 8,
-                          color: const Color(0xff1d7fff),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  _getProgressText(),
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ),
-
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-            child: Text(
-              "Reading for ${dateFormat.format(selectedDate)}",
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            child: Hero(
+              tag: "schedule-dates-${widget.schedule.id}",
+              child: Text(
+                dateFormat.format(selectedDate),
+                style: textTheme.bodyMedium?.copyWith(
+                  color: textTheme.bodyMedium?.color?.withOpacity(0.7),
+                ),
+              ),
+            ),
+          ),
+          // Progress bar
+          Hero(
+            tag: "schedule-progress-${widget.schedule.id}",
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0, end: _getOverallProgress()),
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOut,
+                      builder: (context, value, child) {
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: value,
+                            minHeight: 8,
+                            color: colorScheme.primary,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    _getProgressText(),
+                    style: textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 
-          // PageView with draggable vertical scrollbars
+          const SizedBox(height: 16),
+
+          // PageView
           Expanded(
             child: PageView.builder(
               controller: _pageController,
@@ -318,12 +324,11 @@ class _ReadingPageState extends State<ReadingPage> {
                     controller: scrollController,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,
-                      vertical: 10,
+                      vertical: 12,
                     ),
                     itemCount: verses.length,
                     itemBuilder: (context, idx) {
                       final v = Map<String, dynamic>.from(verses[idx]);
-
                       return VerseTile(
                         verse: v,
                         index: index,
@@ -332,11 +337,9 @@ class _ReadingPageState extends State<ReadingPage> {
                         ),
                         onToggle: (newState) async {
                           await _toggleVerse(v);
-                          setState(() {});
                         },
                         onLongPress: () async {
                           await _toggleAllAbove(idx);
-                          setState(() {});
                         },
                       );
                     },
@@ -345,13 +348,13 @@ class _ReadingPageState extends State<ReadingPage> {
               },
             ),
           ),
+          SizedBox(height: 100),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: verses.isEmpty || _isTogglingAll || _isPageLoading
             ? null
             : _checkOrUncheckAll,
-        backgroundColor: const Color(0xff1d7fff),
         tooltip: _isPageLoading
             ? "Loading..."
             : _allVersesRead()
@@ -399,11 +402,20 @@ class VerseTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textStyle = TextStyle(
-      fontSize: 16,
-      color: isRead ? Colors.grey.shade500 : Colors.black,
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    final textStyle =
+        textTheme.bodyMedium?.copyWith(
+          color: isRead
+              ? colorScheme.onBackground.withOpacity(0.1)
+              : colorScheme.onBackground,
+        ) ??
+        const TextStyle();
+
+    final boldTextStyle = textStyle.copyWith(
+      fontSize: textTheme.titleMedium?.fontSize,
     );
-    final boldTextStyle = textStyle.copyWith(fontWeight: FontWeight.w600);
 
     return AnimatedTile(
       uniqueKey: '${verse['book']}-${verse['chapter']}-${verse['verse']}',
@@ -415,7 +427,7 @@ class VerseTile extends StatelessWidget {
           onTap: () => onToggle(!isRead),
           onLongPress: onLongPress,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -423,6 +435,7 @@ class VerseTile extends StatelessWidget {
                   "${verse['book']} ${verse['chapter']}:${verse['verse']}",
                   style: boldTextStyle,
                 ),
+                SizedBox(height: 8),
                 Text("${verse['text']}", style: textStyle),
               ],
             ),

@@ -22,11 +22,32 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Bible Reading App',
+
+      themeMode: ThemeMode.system,
+
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Color(0xff1d7fff)),
+        brightness: Brightness.light,
+        colorScheme:
+            ColorScheme.fromSeed(
+              seedColor: const Color(0xff1d7fff),
+              brightness: Brightness.light,
+            ).copyWith(
+              primary: const Color(0xff1d7fff), // 💡 force vibrant blue
+            ),
         fontFamily: 'Inter',
         useMaterial3: true,
       ),
+
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xff1d7fff),
+          brightness: Brightness.dark,
+        ),
+        fontFamily: 'Inter',
+        useMaterial3: true,
+      ),
+
       home: const SchedulesPage(),
     );
   }

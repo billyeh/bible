@@ -51,20 +51,22 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
     });
   }
 
-  Widget _buildGroupTile(String label, List<String> books) {
+  Widget _buildGroupTile(
+    String label,
+    List<String> books,
+    Color primaryColor,
+    TextStyle labelStyle,
+  ) {
     final allSelected = books.every(_selectedBooks.contains);
     final someSelected = books.any(_selectedBooks.contains);
 
     return CheckboxListTile(
       dense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 0),
-      title: Text(
-        label,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-      ),
+      contentPadding: EdgeInsets.zero,
+      title: Text(label, style: labelStyle),
       value: allSelected ? true : (someSelected ? null : false),
-      tristate: true, // allows indeterminate state
-      activeColor: const Color(0xff1d7fff),
+      tristate: true,
+      activeColor: primaryColor,
       onChanged: (checked) {
         setState(() {
           if (checked == true) {
@@ -79,14 +81,14 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
     );
   }
 
-  Widget _buildBookTile(String book) {
+  Widget _buildBookTile(String book, Color primaryColor, TextStyle textStyle) {
     final selected = _selectedBooks.contains(book);
     return CheckboxListTile(
       dense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 0),
-      title: Text(book, style: const TextStyle(fontSize: 16)),
+      contentPadding: EdgeInsets.zero,
+      title: Text(book, style: textStyle),
       value: selected,
-      activeColor: const Color(0xff1d7fff),
+      activeColor: primaryColor,
       onChanged: (checked) {
         setState(() {
           if (checked == true) {
@@ -103,9 +105,7 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
 
   void _updateFromVersesPerDay() {
     if (_totalVersesSelected == 0) return;
-
     final totalDays = (_totalVersesSelected / _versesPerDay).ceil();
-
     setState(() {
       _endDate = _startDate.add(Duration(days: max(1, totalDays - 1)));
       _updateAnimatedProgress();
@@ -114,9 +114,7 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
 
   void _updateFromEndDate() {
     if (_totalVersesSelected == 0) return;
-
     final totalDays = _endDate.difference(_startDate).inDays + 1;
-
     setState(() {
       _versesPerDay = (_totalVersesSelected / totalDays).ceil();
       _updateAnimatedProgress();
@@ -133,7 +131,6 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
     if (picked != null) {
       setState(() {
         _startDate = picked;
-        // Make sure end date is not before start date.
         if (_endDate.isBefore(_startDate)) {
           _endDate = _startDate.add(const Duration(days: 1));
         }
@@ -173,9 +170,40 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
     }
   }
 
-  Widget _versesPerDayBar(bool isEnabled) {
-    final activeColor = const Color(0xff1d7fff);
-    final disabledColor = Colors.grey.shade400;
+  int _mapRatioToVerses(double ratio) {
+    if (ratio < 0.25) {
+      return 1 + (ratio / 0.25 * 19).round();
+    } else if (ratio < 0.75) {
+      final t = (ratio - 0.25) / 0.5;
+      final steps = (t * 19).round();
+      return 20 + steps * 20;
+    } else {
+      final t = (ratio - 0.75) / 0.25;
+      final steps = (t * 19).round();
+      return 400 + steps * 400;
+    }
+  }
+
+  double _mapVersesToRatio(int verses) {
+    late double ratio;
+    if (verses <= 20) {
+      ratio = (verses - 1) / 19 * 0.25;
+    } else if (verses <= 400) {
+      final steps = ((verses - 20) / 20).round();
+      ratio = 0.25 + (steps / 19) * 0.5;
+    } else {
+      final steps = ((verses - 400) / 400).round();
+      ratio = 0.75 + (steps / 19) * 0.25;
+    }
+    return min(ratio, 1);
+  }
+
+  Widget _versesPerDayBar(
+    bool isEnabled,
+    Color primaryColor,
+    Color onSurface,
+    TextStyle textStyle,
+  ) {
     final targetProgress = isEnabled ? _mapVersesToRatio(_versesPerDay) : 0.0;
     final displayProgress = _isDragging ? targetProgress : _animatedProgress;
 
@@ -184,8 +212,8 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
         return LinearProgressIndicator(
           value: displayProgress,
           minHeight: 8,
-          backgroundColor: Colors.grey.shade300,
-          color: isEnabled ? activeColor : disabledColor,
+          backgroundColor: onSurface.withOpacity(0.2),
+          color: isEnabled ? primaryColor : onSurface.withOpacity(0.4),
         );
       } else {
         return TweenAnimationBuilder<double>(
@@ -195,8 +223,8 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
           builder: (context, value, _) => LinearProgressIndicator(
             value: value,
             minHeight: 8,
-            backgroundColor: Colors.grey.shade300,
-            color: isEnabled ? activeColor : disabledColor,
+            backgroundColor: onSurface.withOpacity(0.2),
+            color: isEnabled ? primaryColor : onSurface.withOpacity(0.4),
           ),
         );
       }
@@ -204,7 +232,7 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
 
     const knobSize = 12.0;
     Widget buildKnob(double width) {
-      final knobPosition = (width - 12) * displayProgress;
+      final knobPosition = (width - knobSize) * displayProgress;
       return AnimatedContainer(
         duration: _isDragging
             ? Duration.zero
@@ -215,7 +243,7 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
           width: knobSize,
           height: knobSize,
           decoration: BoxDecoration(
-            color: isEnabled ? activeColor : disabledColor,
+            color: isEnabled ? primaryColor : onSurface.withOpacity(0.4),
             shape: BoxShape.circle,
           ),
         ),
@@ -231,30 +259,30 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
         if (!isEnabled) return;
         final box = context.findRenderObject() as RenderBox?;
         if (box == null) return;
-
         final localOffset = box.globalToLocal(details.globalPosition);
         final width = box.size.width;
-
-        // Adjust for knob radius so it can actually reach both ends
         final dx = (localOffset.dx - knobSize / 2).clamp(0.0, width - knobSize);
         final ratio = (dx / (width - knobSize)).clamp(0.0, 1.0);
-
-        final newValue = _mapRatioToVerses(ratio);
-        setState(() => _versesPerDay = newValue);
+        setState(() => _versesPerDay = _mapRatioToVerses(ratio));
         _updateFromVersesPerDay();
       },
       onHorizontalDragEnd: (_) {
         if (!isEnabled) return;
         setState(() {
           _isDragging = false;
-          _animatedProgress = targetProgress; // animate to new value after drag
+          _animatedProgress = targetProgress;
         });
       },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _versesPerDayLabelAnimated(_versesPerDay, isEnabled),
-          const SizedBox(height: 8),
+          _versesPerDayLabelAnimated(
+            _versesPerDay,
+            isEnabled,
+            onSurface,
+            textStyle,
+          ),
+          const SizedBox(height: 12),
           LayoutBuilder(
             builder: (context, constraints) {
               final width = constraints.maxWidth;
@@ -275,7 +303,12 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
     );
   }
 
-  Widget _versesPerDayLabelAnimated(int verses, bool isEnabled) {
+  Widget _versesPerDayLabelAnimated(
+    int verses,
+    bool isEnabled,
+    Color onSurface,
+    TextStyle textStyle,
+  ) {
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(
         begin: 0,
@@ -285,242 +318,224 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
       curve: Curves.easeOut,
       builder: (context, value, child) {
         final int displayValue = value.round();
-
         String text;
         if (displayValue <= 20) {
           text = "$displayValue verse${displayValue == 1 ? '' : 's'} a day";
-        } else if (displayValue <= 20 * 20) {
+        } else if (displayValue <= 400) {
           final chapters = (displayValue / 20).ceil();
           text = "$chapters chapter${chapters == 1 ? '' : 's'} a day";
         } else {
-          final books = (displayValue / (20 * 20)).ceil();
+          final books = (displayValue / 400).ceil();
           text = "$books book${books == 1 ? '' : 's'} a day";
         }
-
         return Text(
           text,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: isEnabled ? Colors.black : Colors.grey,
+          style: textStyle.copyWith(
+            color: isEnabled
+                ? textStyle.color
+                : textStyle.color?.withOpacity(0.5),
           ),
         );
       },
     );
   }
 
-  int _mapRatioToVerses(double ratio) {
-    if (ratio < 0.25) {
-      // 0–25% → 1–20 verses (step 1)
-      return 1 + (ratio / 0.25 * 19).round();
-    } else if (ratio < 0.75) {
-      // 25–75% → 1–20 chapters (step 1 chapter = 20 verses)
-      final t = (ratio - 0.25) / 0.5;
-      final steps = (t * 19).round(); // 0..19 steps
-      return 20 + steps * 20; // start from 20 verses
-    } else {
-      // 75–100% → 1–20 books (step 1 book = 400 verses)
-      final t = (ratio - 0.75) / 0.25;
-      final steps = (t * 19).round(); // 0..19 steps
-      return 400 + steps * 400; // start from 400 verses
-    }
-  }
-
-  double _mapVersesToRatio(int verses) {
-    late double ratio;
-    if (verses <= 20) {
-      ratio = (verses - 1) / 19 * 0.25;
-    } else if (verses <= 20 * 20) {
-      final steps = ((verses - 20) / 20).round();
-      ratio = 0.25 + (steps / 19) * 0.5;
-    } else {
-      final steps = ((verses - 400) / 400).round();
-      ratio = 0.75 + (steps / 19) * 0.25;
-    }
-    return min(ratio, 1);
-  }
-
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final dateFormat = DateFormat.yMMMd();
     final otBooks = _booksByTestament?["Old Testament"] ?? [];
     final ntBooks = _booksByTestament?["New Testament"] ?? [];
     final isEnabled = _totalVersesSelected > 0;
 
+    final primaryColor = theme.colorScheme.primary;
+    final onSurface = theme.colorScheme.onSurface;
+    final bookTextStyle = theme.textTheme.bodyMedium!;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
           "Create plan",
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
       ),
-      backgroundColor: const Color(0xFFF9F9F9),
+      backgroundColor: theme.colorScheme.background,
       body: SafeArea(
         child: _loadingBooks
             ? const Center(child: CircularProgressIndicator())
-            : FutureBuilder<Map<String, List<String>>>(
-                future: _bibleData.getBooksByTestament(),
-                builder: (context, snapshot) {
-                  return Column(
-                    children: [
-                      // Scrollable form content
-                      Expanded(
-                        child: ListView(
-                          padding: const EdgeInsets.symmetric(horizontal: 36),
-                          children: [
-                            const SizedBox(height: 16),
-                            // Name field
-                            Text("Plan name", style: TextStyle(fontSize: 16)),
-                            TextField(
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: -4,
-                                  vertical: 0,
-                                ),
-                              ),
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              controller: TextEditingController(
-                                text: _scheduleName,
-                              ),
-                              onChanged: (val) => _scheduleName = val,
+            : Column(
+                children: [
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.symmetric(horizontal: 36),
+                      children: [
+                        const SizedBox(height: 16),
+                        Text("Plan name", style: theme.textTheme.titleMedium),
+                        TextField(
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
                             ),
-
-                            const SizedBox(height: 32),
-
-                            // Book selection
-                            const Text(
-                              "What are you reading?",
-                              style: TextStyle(fontSize: 16),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: -4,
+                              vertical: 0,
                             ),
-                            const SizedBox(height: 16),
-                            Container(
-                              height: 220,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Scrollbar(
-                                controller: _booksScrollController,
-                                thumbVisibility: true,
-                                child: ListView(
-                                  controller: _booksScrollController,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 8,
-                                  ),
-                                  children: [
-                                    _buildGroupTile("Old Testament", otBooks),
-                                    ...otBooks.map(_buildBookTile),
-                                    _buildGroupTile("New Testament", ntBooks),
-                                    ...ntBooks.map(_buildBookTile),
-                                  ],
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(height: 32),
-
-                            // Reading speed
-                            const Text(
-                              "How fast do you want to go?",
-                              style: TextStyle(fontSize: 16),
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                Expanded(child: _versesPerDayBar(isEnabled)),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Dates
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                InkWell(
-                                  onTap: isEnabled ? _pickStartDate : null,
-                                  child: Text(
-                                    "${dateFormat.format(_startDate)}  - ",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: isEnabled
-                                          ? Colors.black
-                                          : Colors.grey,
-                                    ),
-                                  ),
-                                ),
-                                InkWell(
-                                  onTap: isEnabled ? _pickEndDate : null,
-                                  child: Text(
-                                    dateFormat.format(_endDate),
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: isEnabled
-                                          ? Colors.black
-                                          : Colors.grey,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                          ),
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                          controller: TextEditingController(
+                            text: _scheduleName,
+                          ),
+                          onChanged: (val) => _scheduleName = val,
                         ),
-                      ),
-
-                      // Bottom-aligned Create button
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(36, 16, 36, 36),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xff1d7fff),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            onPressed: _selectedBooks.isEmpty
-                                ? null
-                                : () async {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text("Schedule created!"),
-                                      ),
-                                    );
-                                    final schedule = Schedule.create(
-                                      name: _scheduleName,
-                                      startDate: _startDate,
-                                      endDate: _endDate,
-                                      booksToRead: _selectedBooks.toList(),
-                                    );
-                                    await isar.writeTxn(() async {
-                                      await isar.schedules.put(schedule);
-                                    });
-                                    if (mounted) Navigator.pop(context);
-                                  },
-                            child: const Text(
-                              "Create Plan",
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w600,
-                              ),
+                        const SizedBox(height: 32),
+                        Text(
+                          "What are you reading?",
+                          style: theme.textTheme.titleMedium,
+                        ),
+                        Container(
+                          height: 220,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Scrollbar(
+                            controller: _booksScrollController,
+                            thumbVisibility: true,
+                            child: ListView(
+                              controller: _booksScrollController,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              children: [
+                                _buildGroupTile(
+                                  "Old Testament",
+                                  otBooks,
+                                  primaryColor,
+                                  bookTextStyle,
+                                ),
+                                ...otBooks.map(
+                                  (b) => _buildBookTile(
+                                    b,
+                                    primaryColor,
+                                    bookTextStyle,
+                                  ),
+                                ),
+                                _buildGroupTile(
+                                  "New Testament",
+                                  ntBooks,
+                                  primaryColor,
+                                  bookTextStyle,
+                                ),
+                                ...ntBooks.map(
+                                  (b) => _buildBookTile(
+                                    b,
+                                    primaryColor,
+                                    bookTextStyle,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
+                        const SizedBox(height: 32),
+                        Text(
+                          "How fast do you want to go?",
+                          style: theme.textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            InkWell(
+                              onTap: isEnabled ? _pickStartDate : null,
+                              child: Text(
+                                "${dateFormat.format(_startDate)}  - ",
+                                style: bookTextStyle.copyWith(
+                                  color: isEnabled
+                                      ? bookTextStyle.color
+                                      : bookTextStyle.color?.withOpacity(0.5),
+                                ),
+                              ),
+                            ),
+                            InkWell(
+                              onTap: isEnabled ? _pickEndDate : null,
+                              child: Text(
+                                dateFormat.format(_endDate),
+                                style: bookTextStyle.copyWith(
+                                  color: isEnabled
+                                      ? bookTextStyle.color
+                                      : bookTextStyle.color?.withOpacity(0.5),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _versesPerDayBar(
+                                isEnabled,
+                                primaryColor,
+                                onSurface,
+                                bookTextStyle,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(36, 16, 36, 36),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: theme.colorScheme.primaryContainer,
+                          foregroundColor: theme.colorScheme.onPrimaryContainer,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: _selectedBooks.isEmpty
+                            ? null
+                            : () async {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Schedule created!"),
+                                  ),
+                                );
+                                final schedule = Schedule.create(
+                                  name: _scheduleName,
+                                  startDate: _startDate,
+                                  endDate: _endDate,
+                                  booksToRead: _selectedBooks.toList(),
+                                );
+                                await isar.writeTxn(() async {
+                                  await isar.schedules.put(schedule);
+                                });
+                                if (mounted) Navigator.pop(context);
+                              },
+                        child: Text(
+                          "Create Plan",
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: _selectedBooks.isEmpty
+                                ? theme.colorScheme.onSurface.withOpacity(0.7)
+                                : theme.colorScheme.onSurface,
+                          ),
+                        ),
                       ),
-                    ],
-                  );
-                },
+                    ),
+                  ),
+                ],
               ),
       ),
     );
