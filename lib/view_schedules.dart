@@ -20,7 +20,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
   List<Schedule> _schedules = [];
   bool _loading = true;
   final BibleData _bibleData = BibleData();
-  String _filter = 'unfinished';
+  String _filter = 'all';
 
   @override
   void initState() {
