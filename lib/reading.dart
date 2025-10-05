@@ -200,7 +200,7 @@ class _ReadingPageState extends State<ReadingPage> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
@@ -221,7 +221,7 @@ class _ReadingPageState extends State<ReadingPage> {
           IconButton(
             icon: Icon(
               Icons.calendar_today,
-              color: colorScheme.onBackground,
+              color: colorScheme.onSurface,
               size: textTheme.titleLarge?.fontSize,
             ),
             onPressed: () async {
@@ -253,7 +253,7 @@ class _ReadingPageState extends State<ReadingPage> {
               child: Text(
                 dateFormat.format(selectedDate),
                 style: textTheme.bodyMedium?.copyWith(
-                  color: textTheme.bodyMedium?.color?.withOpacity(0.7),
+                  color: textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                 ),
               ),
             ),
@@ -408,8 +408,8 @@ class VerseTile extends StatelessWidget {
     final textStyle =
         textTheme.bodyMedium?.copyWith(
           color: isRead
-              ? colorScheme.onBackground.withOpacity(0.1)
-              : colorScheme.onBackground,
+              ? colorScheme.onSurface.withValues(alpha: 0.1)
+              : colorScheme.onSurface,
         ) ??
         const TextStyle();
 

@@ -212,8 +212,8 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
         return LinearProgressIndicator(
           value: displayProgress,
           minHeight: 8,
-          backgroundColor: onSurface.withOpacity(0.2),
-          color: isEnabled ? primaryColor : onSurface.withOpacity(0.4),
+          backgroundColor: onSurface.withValues(alpha: 0.2),
+          color: isEnabled ? primaryColor : onSurface.withValues(alpha: 0.4),
         );
       } else {
         return TweenAnimationBuilder<double>(
@@ -223,8 +223,8 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
           builder: (context, value, _) => LinearProgressIndicator(
             value: value,
             minHeight: 8,
-            backgroundColor: onSurface.withOpacity(0.2),
-            color: isEnabled ? primaryColor : onSurface.withOpacity(0.4),
+            backgroundColor: onSurface.withValues(alpha: 0.2),
+            color: isEnabled ? primaryColor : onSurface.withValues(alpha: 0.4),
           ),
         );
       }
@@ -243,7 +243,7 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
           width: knobSize,
           height: knobSize,
           decoration: BoxDecoration(
-            color: isEnabled ? primaryColor : onSurface.withOpacity(0.4),
+            color: isEnabled ? primaryColor : onSurface.withValues(alpha: 0.4),
             shape: BoxShape.circle,
           ),
         ),
@@ -333,7 +333,7 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
           style: textStyle.copyWith(
             color: isEnabled
                 ? textStyle.color
-                : textStyle.color?.withOpacity(0.5),
+                : textStyle.color?.withValues(alpha: 0.5),
           ),
         );
       },
@@ -364,7 +364,7 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
       ),
-      backgroundColor: theme.colorScheme.background,
+      backgroundColor: theme.colorScheme.surface,
       body: SafeArea(
         child: _loadingBooks
             ? const Center(child: CircularProgressIndicator())
@@ -458,7 +458,9 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
                                 style: bookTextStyle.copyWith(
                                   color: isEnabled
                                       ? bookTextStyle.color
-                                      : bookTextStyle.color?.withOpacity(0.5),
+                                      : bookTextStyle.color?.withValues(
+                                          alpha: 0.5,
+                                        ),
                                 ),
                               ),
                             ),
@@ -469,7 +471,9 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
                                 style: bookTextStyle.copyWith(
                                   color: isEnabled
                                       ? bookTextStyle.color
-                                      : bookTextStyle.color?.withOpacity(0.5),
+                                      : bookTextStyle.color?.withValues(
+                                          alpha: 0.5,
+                                        ),
                                 ),
                               ),
                             ),
@@ -521,14 +525,18 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
                                 await isar.writeTxn(() async {
                                   await isar.schedules.put(schedule);
                                 });
-                                if (mounted) Navigator.pop(context);
+                                if (context.mounted) {
+                                  Navigator.pop(context);
+                                }
                               },
                         child: Text(
                           "Create Plan",
                           style: theme.textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: _selectedBooks.isEmpty
-                                ? theme.colorScheme.onSurface.withOpacity(0.7)
+                                ? theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.7,
+                                  )
                                 : theme.colorScheme.onSurface,
                           ),
                         ),

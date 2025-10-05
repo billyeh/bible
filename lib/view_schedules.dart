@@ -76,7 +76,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
     }
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -145,7 +145,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                     ? Center(child: Text(noReadingPlans))
                     : ListView.separated(
                         itemCount: _schedules.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 28),
+                        separatorBuilder: (_, _) => const SizedBox(height: 28),
                         itemBuilder: (context, index) {
                           final schedule = _schedules[index];
                           return AnimatedTile(
@@ -262,7 +262,9 @@ class _SchedulesPageState extends State<SchedulesPage> {
                       child: Text(
                         "${dateFormat.format(s.startDate)} - ${dateFormat.format(s.endDate)}",
                         style: textTheme.bodyMedium?.copyWith(
-                          color: textTheme.bodyMedium?.color?.withOpacity(0.7),
+                          color: textTheme.bodyMedium?.color?.withValues(
+                            alpha: 0.7,
+                          ),
                         ),
                       ),
                     ),
