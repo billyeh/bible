@@ -408,7 +408,7 @@ class VerseTile extends StatelessWidget {
     final textStyle =
         textTheme.bodyMedium?.copyWith(
           color: isRead
-              ? colorScheme.onSurface.withValues(alpha: 0.1)
+              ? colorScheme.onSurface.withValues(alpha: 0.2)
               : colorScheme.onSurface,
         ) ??
         const TextStyle();
