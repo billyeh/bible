@@ -7,6 +7,7 @@ import 'package:bible/main.dart';
 import 'package:bible/create_schedule.dart';
 import 'package:bible/reading.dart';
 import 'package:bible/bible_data/bible_data.dart';
+import 'package:bible/bottom_action_bar.dart';
 import 'models/schedule.dart';
 
 class SchedulesPage extends StatefulWidget {
@@ -163,7 +164,6 @@ class _SchedulesPageState extends State<SchedulesPage> {
                         },
                       ),
               ),
-              SizedBox(height: 100),
             ],
           ),
         ),
@@ -178,6 +178,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
         },
         child: const Icon(Icons.add),
       ),
+      bottomNavigationBar: BottomActionBar(),
     );
   }
 

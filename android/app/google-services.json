@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "855397071841",
+    "project_id": "biblereading-1b8c2",
+    "storage_bucket": "biblereading-1b8c2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:855397071841:android:41d01f3e15c0233b0d30a0",
+        "android_client_info": {
+          "package_name": "com.example.bible"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "855397071841-khpakehf549ddhs2grpsfhnr620gaatq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.bible",
+            "certificate_hash": "b0be12cf232b5d31c26b8379cf2d8cb98a5159db"
+          }
+        },
+        {
+          "client_id": "855397071841-1o57qcguatqmvh0gvn9cmfnl6u8vgqcq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7ZXoSnxsekD8Ma4TAV1NmrbkzyRH-_iM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "855397071841-1o57qcguatqmvh0gvn9cmfnl6u8vgqcq.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "855397071841-cq2c82hf8ppvpo1k5ti8gnktjka4mgi4.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.bible"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
