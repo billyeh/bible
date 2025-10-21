@@ -1,3 +1,5 @@
+import 'package:bible/services/pocketbase_service.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -31,7 +33,12 @@ class AuthManager {
         );
 
         final userCredential = await _auth.signInWithCredential(credential);
-        return userCredential.user;
+        final user = userCredential.user;
+        if (user != null) {
+          // 🔹 Ensure PocketBase user record exists.
+          await PocketbaseService().syncFirebaseUser(user);
+        }
+        return user;
       }
     } catch (e) {
       if (e is GoogleSignInException &&

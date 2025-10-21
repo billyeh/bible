@@ -497,6 +497,7 @@ void main() {
       startDate: today,
       endDate: today,
       booksToRead: ['TestBook'],
+      uuid: null,
     );
 
     await isar.writeTxn(() async {

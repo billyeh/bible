@@ -36,6 +36,11 @@ const ScheduleSchema = CollectionSchema(
       id: 3,
       name: r'startDate',
       type: IsarType.dateTime,
+    ),
+    r'uuid': PropertySchema(
+      id: 4,
+      name: r'uuid',
+      type: IsarType.string,
     )
   },
   estimateSize: _scheduleEstimateSize,
@@ -73,6 +78,7 @@ int _scheduleEstimateSize(
     }
   }
   bytesCount += 3 + object.name.length * 3;
+  bytesCount += 3 + object.uuid.length * 3;
   return bytesCount;
 }
 
@@ -86,6 +92,7 @@ void _scheduleSerialize(
   writer.writeDateTime(offsets[1], object.endDate);
   writer.writeString(offsets[2], object.name);
   writer.writeDateTime(offsets[3], object.startDate);
+  writer.writeString(offsets[4], object.uuid);
 }
 
 Schedule _scheduleDeserialize(
@@ -100,6 +107,7 @@ Schedule _scheduleDeserialize(
   object.id = id;
   object.name = reader.readString(offsets[2]);
   object.startDate = reader.readDateTime(offsets[3]);
+  object.uuid = reader.readString(offsets[4]);
   return object;
 }
 
@@ -118,6 +126,8 @@ P _scheduleDeserializeProp<P>(
       return (reader.readString(offset)) as P;
     case 3:
       return (reader.readDateTime(offset)) as P;
+    case 4:
+      return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -725,6 +735,136 @@ extension ScheduleQueryFilter
       ));
     });
   }
+
+  QueryBuilder<Schedule, Schedule, QAfterFilterCondition> uuidEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Schedule, Schedule, QAfterFilterCondition> uuidGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Schedule, Schedule, QAfterFilterCondition> uuidLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Schedule, Schedule, QAfterFilterCondition> uuidBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'uuid',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Schedule, Schedule, QAfterFilterCondition> uuidStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Schedule, Schedule, QAfterFilterCondition> uuidEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Schedule, Schedule, QAfterFilterCondition> uuidContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'uuid',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Schedule, Schedule, QAfterFilterCondition> uuidMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'uuid',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Schedule, Schedule, QAfterFilterCondition> uuidIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'uuid',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Schedule, Schedule, QAfterFilterCondition> uuidIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'uuid',
+        value: '',
+      ));
+    });
+  }
 }
 
 extension ScheduleQueryObject
@@ -829,6 +969,18 @@ extension ScheduleQuerySortBy on QueryBuilder<Schedule, Schedule, QSortBy> {
       return query.addSortBy(r'startDate', Sort.desc);
     });
   }
+
+  QueryBuilder<Schedule, Schedule, QAfterSortBy> sortByUuid() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'uuid', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Schedule, Schedule, QAfterSortBy> sortByUuidDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'uuid', Sort.desc);
+    });
+  }
 }
 
 extension ScheduleQuerySortThenBy
@@ -880,6 +1032,18 @@ extension ScheduleQuerySortThenBy
       return query.addSortBy(r'startDate', Sort.desc);
     });
   }
+
+  QueryBuilder<Schedule, Schedule, QAfterSortBy> thenByUuid() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'uuid', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Schedule, Schedule, QAfterSortBy> thenByUuidDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'uuid', Sort.desc);
+    });
+  }
 }
 
 extension ScheduleQueryWhereDistinct
@@ -906,6 +1070,13 @@ extension ScheduleQueryWhereDistinct
   QueryBuilder<Schedule, Schedule, QDistinct> distinctByStartDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'startDate');
+    });
+  }
+
+  QueryBuilder<Schedule, Schedule, QDistinct> distinctByUuid(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'uuid', caseSensitive: caseSensitive);
     });
   }
 }
@@ -939,6 +1110,12 @@ extension ScheduleQueryProperty
   QueryBuilder<Schedule, DateTime, QQueryOperations> startDateProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'startDate');
+    });
+  }
+
+  QueryBuilder<Schedule, String, QQueryOperations> uuidProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'uuid');
     });
   }
 }

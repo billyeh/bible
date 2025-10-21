@@ -2,12 +2,18 @@ import 'package:bible/models/verse.dart';
 import 'package:bible/bible_data/bible_data.dart';
 
 import 'package:isar/isar.dart';
+import 'package:uuid/uuid.dart';
+import 'package:pocketbase/pocketbase.dart';
 
 part 'schedule.g.dart';
+
+final _uuid = const Uuid();
 
 @collection
 class Schedule {
   Id id = Isar.autoIncrement;
+
+  late String uuid;
 
   late String name;
 
@@ -29,12 +35,44 @@ class Schedule {
     required DateTime startDate,
     required DateTime endDate,
     required List<String> booksToRead,
+    required String? uuid,
   }) {
     return Schedule()
       ..name = name
+      ..uuid = uuid ?? _uuid.v4()
       ..startDate = _normalize(startDate)
       ..endDate = _normalize(endDate)
       ..booksToRead = booksToRead;
+  }
+
+  static Schedule fromPocketBaseRecord(
+    RecordModel record,
+    BibleData? bibleData,
+  ) {
+    final data = record.data;
+    print('${record.data}');
+
+    final rawUuid = data['uuid'];
+    final rawName = data['name'];
+    final rawStart = data['start_date'];
+    final rawEnd = data['end_date'];
+    final rawBooks = data['books_to_read'];
+    Schedule schedule = Schedule()
+      ..uuid = rawUuid?.toString() ?? const Uuid().v4()
+      ..name = rawName?.toString() ?? 'Untitled Plan'
+      ..startDate =
+          DateTime.tryParse(rawStart?.toString() ?? '') ?? DateTime.now()
+      ..endDate =
+          DateTime.tryParse(rawEnd?.toString() ?? '') ??
+          DateTime.now().add(const Duration(days: 30))
+      ..booksToRead = rawBooks is List
+          ? rawBooks.map((e) => e.toString()).toList()
+          : <String>[];
+    print('created schedule');
+    if (bibleData != null) {
+      schedule.computeFormattedBooks(bibleData);
+    }
+    return schedule;
   }
 
   // Computed compressed list of books for displaying.

@@ -521,6 +521,7 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
                                   startDate: _startDate,
                                   endDate: _endDate,
                                   booksToRead: _selectedBooks.toList(),
+                                  uuid: null,
                                 );
                                 await isar.writeTxn(() async {
                                   await isar.schedules.put(schedule);
