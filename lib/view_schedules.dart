@@ -404,7 +404,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
             ),
-            builder: (_) => Wrap(
+            builder: (_) => SafeArea(child: Wrap(
               children: [
                 ListTile(
                   leading: const Icon(Icons.add_box),
@@ -418,7 +418,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                 ),
               ],
             ),
-          );
+          ));
 
           if (action == 'create' && context.mounted) {
             await Navigator.push(
