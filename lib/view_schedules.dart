@@ -4,7 +4,6 @@ import 'package:isar/isar.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:pocketbase/pocketbase.dart';
 
-import 'package:bible/animated_tile.dart';
 import 'package:bible/main.dart';
 import 'package:bible/create_schedule.dart';
 import 'package:bible/reading.dart';
@@ -63,21 +62,23 @@ class _SchedulesPageState extends State<SchedulesPage> {
     final removedItem = _schedules.removeAt(index);
     _listKey.currentState!.removeItem(
       index,
-      (context, animation) => SizeTransition(
-        sizeFactor: animation,
+      (context, animation) => SlideTransition(
+        position: Tween<Offset>(
+          begin: Offset.zero,
+          end: const Offset(1.0, 0.0),
+        ).animate(CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeInOut,
+        )),
         child: FadeTransition(
           opacity: animation,
-          child: AnimatedTile(
-            uniqueKey: '${removedItem.id}-${removedItem.name}',
-            staggerIndex: index,
-            child: _buildScheduleTile(
-              removedItem,
-              DateFormat('MM/dd'),
-              index,
-              _bibleData,
-              Theme.of(context).colorScheme,
-              Theme.of(context).textTheme,
-            ),
+          child: _buildScheduleTile(
+            removedItem,
+            DateFormat('MM/dd'),
+            index,
+            _bibleData,
+            Theme.of(context).colorScheme,
+            Theme.of(context).textTheme,
           ),
         ),
       ),
@@ -94,8 +95,9 @@ class _SchedulesPageState extends State<SchedulesPage> {
     await isar.writeTxn(() async {
       await isar.schedules.delete(schedule.id);
     });
+    
     if (_schedules.isEmpty) {
-      setState(() => {});
+      setState(() {});
     }
   }
 
@@ -368,24 +370,23 @@ class _SchedulesPageState extends State<SchedulesPage> {
                         initialItemCount: _schedules.length,
                         itemBuilder: (context, index, animation) {
                           final schedule = _schedules[index];
-                          return SizeTransition(
-                            sizeFactor: animation,
-                            axisAlignment: 0.0,
+                          return SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(0, 0.1),
+                              end: Offset.zero,
+                            ).animate(CurvedAnimation(
+                              parent: animation,
+                              curve: Curves.easeOut,
+                            )),
                             child: FadeTransition(
                               opacity: animation,
-                              child: AnimatedTile(
-                                uniqueKey: '${schedule.id}-${schedule.name}',
-                                staggerIndex: index,
-                                child: _buildScheduleTile(
-                                  schedule,
-                                  dateFormat,
-                                  index,
-                                  _bibleData,
-                                  colorScheme,
-                                  textTheme,
-                                  animation:
-                                      animation, // <-- pass animation here
-                                ),
+                              child: _buildScheduleTile(
+                                schedule,
+                                dateFormat,
+                                index,
+                                _bibleData,
+                                colorScheme,
+                                textTheme,
                               ),
                             ),
                           );
@@ -491,186 +492,174 @@ class _SchedulesPageState extends State<SchedulesPage> {
     int index,
     BibleData bibleData,
     ColorScheme colorScheme,
-    TextTheme textTheme, {
-    Animation<double>? animation, // optional, from AnimatedList
-  }) {
-    final effectiveAnimation = animation ?? kAlwaysCompleteAnimation;
-
-    return FadeTransition(
-      opacity: effectiveAnimation,
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.05), // slightly below
-          end: Offset.zero,
-        ).animate(effectiveAnimation),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ReadingPage(schedule: s, bible: bibleData),
-                ),
-              );
-              _loadSchedules();
-            },
-            onLongPress: () async {
-              final action = await showModalBottomSheet<String>(
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                ),
-                context: context,
-                builder: (context) => SafeArea(
-                  child: Wrap(
-                    children: [
-                      ListTile(
-                        leading: const Icon(Icons.share),
-                        title: const Text('Share schedule'),
-                        onTap: () => Navigator.pop(context, 'share'),
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.delete),
-                        title: const Text('Delete schedule'),
-                        onTap: () async {
-                          Navigator.pop(context);
-                          final confirm = await showDialog<bool>(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text("Delete schedule"),
-                              content: Text(
-                                "Are you sure you want to delete '${s.name}'?",
-                                style: textTheme.bodyMedium,
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.of(context).pop(false),
-                                  child: const Text("Cancel"),
-                                ),
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.of(context).pop(true),
-                                  child: const Text("Delete"),
-                                ),
-                              ],
-                            ),
-                          );
-                          if (confirm == true) {
-                            final idx = _schedules.indexOf(s);
-                            _deleteSchedule(idx, s);
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              );
-
-              if (action == 'share') _shareSchedule(s);
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Stack(
+    TextTheme textTheme,
+  ) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ReadingPage(schedule: s, bible: bibleData),
+            ),
+          );
+          _loadSchedules();
+        },
+        onLongPress: () async {
+          final action = await showModalBottomSheet<String>(
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+            ),
+            context: context,
+            builder: (context) => SafeArea(
+              child: Wrap(
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Hero(
-                        tag: "schedule-title-${s.id}",
-                        child: Text(
-                          s.name,
-                          style: textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Hero(
-                        tag: "schedule-dates-${s.id}",
-                        child: Text(
-                          "${dateFormat.format(s.startDate)} - ${dateFormat.format(s.endDate)}",
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: textTheme.bodyMedium?.color?.withValues(
-                              alpha: 0.7,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(s.formattedBooks, style: textTheme.bodyMedium),
-                      const SizedBox(height: 12),
-                      Hero(
-                        tag: "schedule-progress-${s.id}",
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 1.5),
-                          child: FutureBuilder<double>(
-                            future: s.getReadingProgress(bibleData),
-                            builder: (context, snapshot) {
-                              final readingProgress = snapshot.data ?? 0.0;
-                              final timeProgress = s.getTimeProgress(
-                                DateTime.now(),
-                              );
-                              final primary = colorScheme.primary;
-                              return TweenAnimationBuilder<double>(
-                                key: ValueKey(readingProgress),
-                                tween: Tween(begin: 0.0, end: 1),
-                                duration: const Duration(milliseconds: 500),
-                                curve: Curves.easeOut,
-                                builder: (context, t, child) {
-                                  return SizedBox(
-                                    height: 16,
-                                    child: Stack(
-                                      alignment: Alignment.centerLeft,
-                                      children: [
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            4,
-                                          ),
-                                          child: LinearProgressIndicator(
-                                            value: t * readingProgress,
-                                            minHeight: 8,
-                                            color: primary,
-                                          ),
-                                        ),
-                                        LayoutBuilder(
-                                          builder: (context, constraints) {
-                                            final width = constraints.maxWidth;
-                                            final circlePosition =
-                                                t * (width - 12) * timeProgress;
-                                            return Transform.translate(
-                                              offset: Offset(circlePosition, 0),
-                                              child: Container(
-                                                width: 12,
-                                                height: 12,
-                                                decoration: BoxDecoration(
-                                                  color: primary,
-                                                  border: Border.all(
-                                                    color: primary,
-                                                    width: 1.5,
-                                                  ),
-                                                  shape: BoxShape.circle,
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
+                  ListTile(
+                    leading: const Icon(Icons.share),
+                    title: const Text('Share schedule'),
+                    onTap: () => Navigator.pop(context, 'share'),
                   ),
-                  _buildParticipantsAndDoneDot(s, colorScheme, textTheme),
+                  ListTile(
+                    leading: const Icon(Icons.delete),
+                    title: const Text('Delete schedule'),
+                    onTap: () async {
+                      Navigator.pop(context);
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text("Delete schedule"),
+                          content: Text(
+                            "Are you sure you want to delete '${s.name}'?",
+                            style: textTheme.bodyMedium,
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.of(context).pop(false),
+                              child: const Text("Cancel"),
+                            ),
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.of(context).pop(true),
+                              child: const Text("Delete"),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirm == true) {
+                        final idx = _schedules.indexOf(s);
+                        _deleteSchedule(idx, s);
+                      }
+                    },
+                  ),
                 ],
               ),
             ),
+          );
+
+          if (action == 'share') _shareSchedule(s);
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Stack(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Hero(
+                    tag: "schedule-title-${s.id}",
+                    child: Text(
+                      s.name,
+                      style: textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Hero(
+                    tag: "schedule-dates-${s.id}",
+                    child: Text(
+                      "${dateFormat.format(s.startDate)} - ${dateFormat.format(s.endDate)}",
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: textTheme.bodyMedium?.color?.withValues(
+                          alpha: 0.7,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(s.formattedBooks, style: textTheme.bodyMedium),
+                  const SizedBox(height: 12),
+                  Hero(
+                    tag: "schedule-progress-${s.id}",
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 1.5),
+                      child: FutureBuilder<double>(
+                        future: s.getReadingProgress(bibleData),
+                        builder: (context, snapshot) {
+                          final readingProgress = snapshot.data ?? 0.0;
+                          final timeProgress = s.getTimeProgress(
+                            DateTime.now(),
+                          );
+                          final primary = colorScheme.primary;
+                          return TweenAnimationBuilder<double>(
+                            key: ValueKey(readingProgress),
+                            tween: Tween(begin: 0.0, end: 1),
+                            duration: const Duration(milliseconds: 500),
+                            curve: Curves.easeOut,
+                            builder: (context, t, child) {
+                              return SizedBox(
+                                height: 16,
+                                child: Stack(
+                                  alignment: Alignment.centerLeft,
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(
+                                        4,
+                                      ),
+                                      child: LinearProgressIndicator(
+                                        value: t * readingProgress,
+                                        minHeight: 8,
+                                        color: primary,
+                                      ),
+                                    ),
+                                    LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        final width = constraints.maxWidth;
+                                        final circlePosition =
+                                            t * (width - 12) * timeProgress;
+                                        return Transform.translate(
+                                          offset: Offset(circlePosition, 0),
+                                          child: Container(
+                                            width: 12,
+                                            height: 12,
+                                            decoration: BoxDecoration(
+                                              color: primary,
+                                              border: Border.all(
+                                                color: primary,
+                                                width: 1.5,
+                                              ),
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              _buildParticipantsAndDoneDot(s, colorScheme, textTheme),
+            ],
           ),
         ),
       ),
