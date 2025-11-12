@@ -60,11 +60,13 @@ class Schedule {
     Schedule schedule = Schedule()
       ..uuid = rawUuid?.toString() ?? const Uuid().v4()
       ..name = rawName?.toString() ?? 'Untitled Plan'
-      ..startDate =
-          DateTime.tryParse(rawStart?.toString() ?? '') ?? DateTime.now()
-      ..endDate =
-          DateTime.tryParse(rawEnd?.toString() ?? '') ??
-          DateTime.now().add(const Duration(days: 30))
+      ..startDate = _normalize(
+        DateTime.tryParse(rawStart?.toString() ?? '') ?? DateTime.now(),
+      )
+      ..endDate = _normalize(
+        DateTime.tryParse(rawEnd?.toString() ?? '') ??
+            DateTime.now().add(const Duration(days: 30)),
+      )
       ..booksToRead = rawBooks is List
           ? rawBooks.map((e) => e.toString()).toList()
           : <String>[];
