@@ -3,6 +3,7 @@ import 'package:bible/bible_data/bible_data.dart';
 import 'package:bible/main.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:math';
 import 'package:intl/intl.dart';
 
@@ -362,6 +363,12 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarIconBrightness:
+              theme.colorScheme.brightness == Brightness.dark
+              ? Brightness.light
+              : Brightness.dark,
+        ),
       ),
       backgroundColor: theme.colorScheme.surface,
       body: SafeArea(

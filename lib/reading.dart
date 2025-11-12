@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:isar/isar.dart';
 
@@ -205,6 +206,11 @@ class _ReadingPageState extends State<ReadingPage> {
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarIconBrightness: colorScheme.brightness == Brightness.dark
+              ? Brightness.light
+              : Brightness.dark,
+        ),
         title: Hero(
           tag: "schedule-title-${widget.schedule.id}",
           child: Material(
