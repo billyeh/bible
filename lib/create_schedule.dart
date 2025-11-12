@@ -75,7 +75,6 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
             _selectedBooks.removeAll(books);
           }
           _updateTotalVersesSelected();
-          _updateFromVersesPerDay();
         });
       },
     );
@@ -97,7 +96,6 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
             _selectedBooks.remove(book);
           }
           _updateTotalVersesSelected();
-          _updateFromVersesPerDay();
         });
       },
     );
@@ -105,7 +103,10 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
 
   void _updateFromVersesPerDay() {
     if (_totalVersesSelected == 0) return;
-    final totalDays = (_totalVersesSelected / _versesPerDay).ceil();
+    var totalDays = (_totalVersesSelected / _versesPerDay).ceil();
+    if (_totalVersesSelected / _versesPerDay % 1 > 0) {
+      totalDays += 1;
+    }
     setState(() {
       _endDate = _startDate.add(Duration(days: max(1, totalDays - 1)));
       _updateAnimatedProgress();
@@ -158,9 +159,7 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
     );
     final total = _bibleData.countTotalVerses(bookVerseCounts);
 
-    setState(() {
-      _totalVersesSelected = total;
-    });
+    _totalVersesSelected = total;
     _updateFromVersesPerDay();
   }
 
