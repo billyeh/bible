@@ -66,10 +66,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
         position: Tween<Offset>(
           begin: Offset.zero,
           end: const Offset(1.0, 0.0),
-        ).animate(CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeInOut,
-        )),
+        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeInOut)),
         child: FadeTransition(
           opacity: animation,
           child: _buildScheduleTile(
@@ -95,7 +92,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
     await isar.writeTxn(() async {
       await isar.schedules.delete(schedule.id);
     });
-    
+
     if (_schedules.isEmpty) {
       setState(() {});
     }
@@ -371,13 +368,16 @@ class _SchedulesPageState extends State<SchedulesPage> {
                         itemBuilder: (context, index, animation) {
                           final schedule = _schedules[index];
                           return SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(0, 0.1),
-                              end: Offset.zero,
-                            ).animate(CurvedAnimation(
-                              parent: animation,
-                              curve: Curves.easeOut,
-                            )),
+                            position:
+                                Tween<Offset>(
+                                  begin: const Offset(0, 0.1),
+                                  end: Offset.zero,
+                                ).animate(
+                                  CurvedAnimation(
+                                    parent: animation,
+                                    curve: Curves.easeOut,
+                                  ),
+                                ),
                             child: FadeTransition(
                               opacity: animation,
                               child: _buildScheduleTile(
@@ -404,21 +404,23 @@ class _SchedulesPageState extends State<SchedulesPage> {
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
             ),
-            builder: (_) => SafeArea(child: Wrap(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.add_box),
-                  title: const Text('Create new schedule'),
-                  onTap: () => Navigator.pop(context, 'create'),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.link),
-                  title: const Text('Join shared schedule'),
-                  onTap: () => Navigator.pop(context, 'join'),
-                ),
-              ],
+            builder: (_) => SafeArea(
+              child: Wrap(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.add_box),
+                    title: const Text('Create new schedule'),
+                    onTap: () => Navigator.pop(context, 'create'),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.link),
+                    title: const Text('Join shared schedule'),
+                    onTap: () => Navigator.pop(context, 'join'),
+                  ),
+                ],
+              ),
             ),
-          ));
+          );
 
           if (action == 'create' && context.mounted) {
             await Navigator.push(
@@ -536,13 +538,11 @@ class _SchedulesPageState extends State<SchedulesPage> {
                           ),
                           actions: [
                             TextButton(
-                              onPressed: () =>
-                                  Navigator.of(context).pop(false),
+                              onPressed: () => Navigator.of(context).pop(false),
                               child: const Text("Cancel"),
                             ),
                             TextButton(
-                              onPressed: () =>
-                                  Navigator.of(context).pop(true),
+                              onPressed: () => Navigator.of(context).pop(true),
                               child: const Text("Delete"),
                             ),
                           ],
@@ -616,9 +616,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
                                   alignment: Alignment.centerLeft,
                                   children: [
                                     ClipRRect(
-                                      borderRadius: BorderRadius.circular(
-                                        4,
-                                      ),
+                                      borderRadius: BorderRadius.circular(4),
                                       child: LinearProgressIndicator(
                                         value: t * readingProgress,
                                         minHeight: 8,
