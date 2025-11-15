@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -8,6 +10,7 @@ import 'package:bible/models/schedule.dart';
 import 'package:bible/models/verse.dart';
 import 'package:bible/bible_data/bible_data.dart';
 import 'package:bible/main.dart';
+import 'package:bible/services/home_widget_service.dart';
 
 class ReadingPage extends StatefulWidget {
   final Schedule schedule;
@@ -176,6 +179,11 @@ class _ReadingPageState extends State<ReadingPage> {
     });
 
     setState(() {});
+
+    // Update widget after toggling a verse
+    if (Platform.isAndroid) {
+      HomeWidgetService.updateCurrentVerse();
+    }
   }
 
   Future<void> _toggleAllAbove(int index) async {

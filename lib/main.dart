@@ -1,13 +1,14 @@
-import 'package:bible/models/verse.dart';
-import 'package:bible/models/schedule.dart';
-import 'package:bible/view_schedules.dart';
-
-import 'firebase_options.dart';
-
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
+
+import 'package:bible/models/verse.dart';
+import 'package:bible/models/schedule.dart';
+import 'package:bible/view_schedules.dart';
+import 'package:bible/services/home_widget_service.dart';
+
+import 'firebase_options.dart';
 
 late Isar isar;
 
@@ -16,6 +17,7 @@ Future<void> main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   final dir = await getApplicationDocumentsDirectory();
   isar = await Isar.open([ScheduleSchema, VerseSchema], directory: dir.path);
+  await HomeWidgetService.initialize();
   runApp(const MyApp());
 }
 

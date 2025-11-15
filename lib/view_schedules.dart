@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:isar/isar.dart';
@@ -12,6 +14,7 @@ import 'package:bible/bottom_action_bar.dart';
 import 'models/schedule.dart';
 import 'package:bible/services/pocketbase_service.dart';
 import 'package:bible/services/auth_manager.dart';
+import 'package:bible/services/home_widget_service.dart';
 
 class SchedulesPage extends StatefulWidget {
   const SchedulesPage({super.key});
@@ -56,6 +59,11 @@ class _SchedulesPageState extends State<SchedulesPage> {
     }
 
     setState(() => _loading = false);
+
+    // Update widget with current verse after loading schedules
+    if (Platform.isAndroid) {
+      HomeWidgetService.updateCurrentVerse();
+    }
   }
 
   void _deleteSchedule(int index, Schedule schedule) async {
@@ -324,33 +332,33 @@ class _SchedulesPageState extends State<SchedulesPage> {
                       await _loadSchedules();
                     },
                     itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 'all',
-                        child: Text(
-                          "All",
-                          style: _filter == 'all'
-                              ? const TextStyle(fontWeight: FontWeight.bold)
-                              : null,
+                        PopupMenuItem(
+                          value: 'all',
+                          child: Text(
+                            "All",
+                            style: _filter == 'all'
+                                ? const TextStyle(fontWeight: FontWeight.bold)
+                                : null,
+                          ),
                         ),
-                      ),
-                      PopupMenuItem(
-                        value: 'finished',
-                        child: Text(
-                          "Finished",
-                          style: _filter == 'finished'
-                              ? const TextStyle(fontWeight: FontWeight.bold)
-                              : null,
+                        PopupMenuItem(
+                          value: 'finished',
+                          child: Text(
+                            "Finished",
+                            style: _filter == 'finished'
+                                ? const TextStyle(fontWeight: FontWeight.bold)
+                                : null,
+                          ),
                         ),
-                      ),
-                      PopupMenuItem(
-                        value: 'unfinished',
-                        child: Text(
-                          "Unfinished",
-                          style: _filter == 'unfinished'
-                              ? const TextStyle(fontWeight: FontWeight.bold)
-                              : null,
+                        PopupMenuItem(
+                          value: 'unfinished',
+                          child: Text(
+                            "Unfinished",
+                            style: _filter == 'unfinished'
+                                ? const TextStyle(fontWeight: FontWeight.bold)
+                                : null,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ],
