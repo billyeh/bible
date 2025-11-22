@@ -206,7 +206,7 @@ class _SchedulesPageState extends State<SchedulesPage> {
         firebaseUserId: firebaseUserRecord.id,
       );
 
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Joined "${schedule.name}"')));
@@ -332,33 +332,33 @@ class _SchedulesPageState extends State<SchedulesPage> {
                       await _loadSchedules();
                     },
                     itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: 'all',
-                          child: Text(
-                            "All",
-                            style: _filter == 'all'
-                                ? const TextStyle(fontWeight: FontWeight.bold)
-                                : null,
-                          ),
+                      PopupMenuItem(
+                        value: 'all',
+                        child: Text(
+                          "All",
+                          style: _filter == 'all'
+                              ? const TextStyle(fontWeight: FontWeight.bold)
+                              : null,
                         ),
-                        PopupMenuItem(
-                          value: 'finished',
-                          child: Text(
-                            "Finished",
-                            style: _filter == 'finished'
-                                ? const TextStyle(fontWeight: FontWeight.bold)
-                                : null,
-                          ),
+                      ),
+                      PopupMenuItem(
+                        value: 'finished',
+                        child: Text(
+                          "Finished",
+                          style: _filter == 'finished'
+                              ? const TextStyle(fontWeight: FontWeight.bold)
+                              : null,
                         ),
-                        PopupMenuItem(
-                          value: 'unfinished',
-                          child: Text(
-                            "Unfinished",
-                            style: _filter == 'unfinished'
-                                ? const TextStyle(fontWeight: FontWeight.bold)
-                                : null,
-                          ),
+                      ),
+                      PopupMenuItem(
+                        value: 'unfinished',
+                        child: Text(
+                          "Unfinished",
+                          style: _filter == 'unfinished'
+                              ? const TextStyle(fontWeight: FontWeight.bold)
+                              : null,
                         ),
+                      ),
                     ],
                   ),
                 ],
