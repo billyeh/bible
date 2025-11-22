@@ -216,22 +216,12 @@ class HomeWidgetService {
 
           final schedule = await isar.schedules.get(scheduleId);
           if (schedule != null) {
-            Verse? verseRef = await isar.verses
-                .filter()
-                .bookEqualTo(book)
-                .chapterEqualTo(chapter)
-                .verseEqualTo(verseNum)
-                .findFirst();
-
-            if (verseRef == null) {
-              verseRef = Verse()
-                ..book = book
-                ..chapter = chapter
-                ..verse = verseNum;
-              await isar.writeTxn(() async {
-                await isar.verses.put(verseRef!);
-              });
-            }
+            final verseRef = await Verse.findOrCreate(
+              isar,
+              book: book,
+              chapter: chapter,
+              verseNum: verseNum,
+            );
 
             await schedule.versesRead.load();
             final isRead = await schedule.versesRead
@@ -243,7 +233,7 @@ class HomeWidgetService {
 
             if (!isRead) {
               await isar.writeTxn(() async {
-                schedule.versesRead.add(verseRef!);
+                schedule.versesRead.add(verseRef);
                 await schedule.versesRead.save();
               });
             }

@@ -147,22 +147,12 @@ class _ReadingPageState extends State<ReadingPage> {
     final chapter = verseRow['chapter'] as int;
     final verseNum = verseRow['verse'] as int;
 
-    Verse? verseRef = await isar.verses
-        .filter()
-        .bookEqualTo(book)
-        .chapterEqualTo(chapter)
-        .verseEqualTo(verseNum)
-        .findFirst();
-
-    if (verseRef == null) {
-      verseRef = Verse()
-        ..book = book
-        ..chapter = chapter
-        ..verse = verseNum;
-      await isar.writeTxn(() async {
-        await isar.verses.put(verseRef!);
-      });
-    }
+    final verseRef = await Verse.findOrCreate(
+      isar,
+      book: book,
+      chapter: chapter,
+      verseNum: verseNum,
+    );
 
     final key = '$book:$chapter:$verseNum';
     final isRead = _versesReadSet.contains(key);
@@ -171,7 +161,7 @@ class _ReadingPageState extends State<ReadingPage> {
       if (isRead) {
         _versesReadSet.remove(key);
         widget.schedule.versesRead.remove(verseRef);
-      } else if (verseRef != null) {
+      } else {
         _versesReadSet.add(key);
         widget.schedule.versesRead.add(verseRef);
       }
