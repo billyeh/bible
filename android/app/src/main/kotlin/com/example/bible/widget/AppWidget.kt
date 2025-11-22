@@ -23,6 +23,20 @@ import androidx.glance.unit.ColorProvider
 import HomeWidgetGlanceState
 import HomeWidgetGlanceStateDefinition
 
+import android.net.Uri
+import androidx.glance.Image
+import androidx.glance.ImageProvider
+import androidx.glance.action.ActionParameters
+import androidx.glance.action.clickable
+import androidx.glance.appwidget.action.ActionCallback
+import androidx.glance.appwidget.action.actionRunCallback
+import androidx.glance.action.actionParametersOf
+import androidx.glance.layout.Alignment
+import androidx.glance.layout.Row
+import androidx.glance.layout.fillMaxWidth
+import es.antonborri.home_widget.HomeWidgetBackgroundIntent
+import com.example.bible.R
+
 class AppWidget : GlanceAppWidget() {
 
     override val stateDefinition: GlanceStateDefinition<*>?
@@ -58,26 +72,47 @@ class AppWidget : GlanceAppWidget() {
             ColorProvider(Color(0xFF000000)) // Dark text for light background
         }
 
+        val textSize = if (verseText.length <= 300) {
+            16.sp
+        } else {
+            12.sp
+        }
+
         Box(
             modifier = GlanceModifier
                 .background(backgroundColor)
                 .padding(16.dp)
         ) {
             Column {
-                if (verseReference.isNotEmpty()) {
-                    Text(
-                        verseReference,
-                        style = TextStyle(
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = textColor,
-                        ),
+                Row(
+                    modifier = GlanceModifier.fillMaxWidth(),
+                ) {
+                    if (verseReference.isNotEmpty()) {
+                        Text(
+                            verseReference,
+                            style = TextStyle(
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = textColor,
+                            ),
+                            modifier = GlanceModifier.defaultWeight()
+                        )
+                    }
+                    Image(
+                        provider = ImageProvider(R.drawable.ic_check),
+                        contentDescription = "Mark as Read",
+                        modifier = GlanceModifier.clickable(
+                            onClick = actionRunCallback<MarkReadAction>(
+                                actionParametersOf(MarkReadAction.verseRefKey to verseReference)
+                            )
+                        )
                     )
                 }
+
                 Text(
                     verseText,
                     style = TextStyle(
-                        fontSize = 16.sp,
+                        fontSize = textSize,
                         color = textColor,
                     ),
                 )
@@ -86,3 +121,17 @@ class AppWidget : GlanceAppWidget() {
     }
 }
 
+class MarkReadAction : ActionCallback {
+    companion object {
+        val verseRefKey = ActionParameters.Key<String>("verseRef")
+    }
+
+    override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
+        val verseRef = parameters[verseRefKey] ?: ""
+        val backgroundIntent = HomeWidgetBackgroundIntent.getBroadcast(
+            context,
+            Uri.parse("homeWidgetExample://markRead?ref=${Uri.encode(verseRef)}")
+        )
+        backgroundIntent.send()
+    }
+}

@@ -18,6 +18,7 @@ Future<void> main() async {
   final dir = await getApplicationDocumentsDirectory();
   isar = await Isar.open([ScheduleSchema, VerseSchema], directory: dir.path);
   await HomeWidgetService.initialize();
+  await HomeWidgetService.registerBackgroundCallback();
   runApp(const MyApp());
 }
 
