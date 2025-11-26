@@ -36,6 +36,10 @@ import androidx.glance.layout.Row
 import androidx.glance.layout.fillMaxWidth
 import es.antonborri.home_widget.HomeWidgetBackgroundIntent
 import com.example.bible.R
+import android.content.Intent
+import android.content.ComponentName
+import com.example.bible.MainActivity
+import androidx.glance.appwidget.action.actionStartActivity
 
 class AppWidget : GlanceAppWidget() {
 
@@ -54,6 +58,8 @@ class AppWidget : GlanceAppWidget() {
         val prefs = currentState.preferences
         val verseText = prefs.getString("verse_text", "") ?: ""
         val verseReference = prefs.getString("verse_reference", "") ?: ""
+        val scheduleId = prefs.getString("schedule_id", "") ?: ""
+        val verseDate = prefs.getString("verse_date", "") ?: ""
 
         // Detect system theme
         val isDarkMode = (context.resources.configuration.uiMode and
@@ -72,50 +78,60 @@ class AppWidget : GlanceAppWidget() {
             ColorProvider(Color(0xFF1a1b20)) // Dark text for light background
         }
 
-        val textSize = if (verseText.length <= 300) {
+        val textSize = if (verseText.length <= 320) {
             14.sp
         } else {
             12.sp
         }
 
-        Box(
+        val intent = Intent(
+            Intent.ACTION_VIEW,
+            Uri.parse("bible://reading?scheduleId=$scheduleId&date=$verseDate")
+        ).apply {
+            component = ComponentName(context, MainActivity::class.java)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            putExtra("es.antonborri.home_widget.launch", true)
+        }
+
+        Column(
             modifier = GlanceModifier
+                .fillMaxWidth()
                 .background(backgroundColor)
                 .padding(16.dp)
+                .clickable(actionStartActivity(intent)),
+            verticalAlignment = Alignment.Top
         ) {
-            Column {
-                Row(
-                    modifier = GlanceModifier.fillMaxWidth(),
-                ) {
-                    if (verseReference.isNotEmpty()) {
-                        Text(
-                            verseReference,
-                            style = TextStyle(
-                                fontSize = 12.sp,
-                                color = textColor,
-                            ),
-                            modifier = GlanceModifier.defaultWeight()
-                        )
-                    }
-                    Image(
-                        provider = ImageProvider(R.drawable.ic_check),
-                        contentDescription = "Mark as Read",
-                        modifier = GlanceModifier.clickable(
-                            onClick = actionRunCallback<MarkReadAction>(
-                                actionParametersOf(MarkReadAction.verseRefKey to verseReference)
-                            )
-                        )
+            Row(
+                modifier = GlanceModifier.fillMaxWidth(),
+            ) {
+                if (verseReference.isNotEmpty()) {
+                    Text(
+                        verseReference,
+                        style = TextStyle(
+                            fontSize = 12.sp,
+                            color = textColor,
+                        ),
+                        modifier = GlanceModifier.defaultWeight()
                     )
                 }
-
-                Text(
-                    verseText,
-                    style = TextStyle(
-                        fontSize = textSize,
-                        color = textColor,
-                    ),
+                Image(
+                    provider = ImageProvider(R.drawable.ic_check),
+                    contentDescription = "Mark as Read",
+                    modifier = GlanceModifier.clickable(
+                        onClick = actionRunCallback<MarkReadAction>(
+                            actionParametersOf(MarkReadAction.verseRefKey to verseReference)
+                        )
+                    )
                 )
             }
+
+            Text(
+                verseText,
+                style = TextStyle(
+                    fontSize = textSize,
+                    color = textColor,
+                ),
+            )
         }
     }
 }

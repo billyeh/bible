@@ -18,11 +18,12 @@ class HomeWidgetService {
   static const _verseChapterKey = 'verse_chapter';
   static const _verseNumKey = 'verse_num';
   static const _scheduleIdKey = 'schedule_id';
+  static const _verseDateKey = 'verse_date';
   static const _androidWidgetReceiver =
       'com.example.bible.widget.HomeWidgetReceiver';
 
   /// Gets the current verse that the user should read.
-  /// Returns a map with 'text', 'reference', 'book', 'chapter', 'verse', 'scheduleId' keys, or null if no verse found.
+  /// Returns a map with 'text', 'reference', 'book', 'chapter', 'verse', 'scheduleId', 'date' keys, or null if no verse found.
   static Future<Map<String, String>?> getCurrentVerse() async {
     final bibleData = BibleData();
     final today = DateTime.now();
@@ -85,6 +86,7 @@ class HomeWidgetService {
               'chapter': verseMap['chapter'].toString(),
               'verse': verseMap['verse'].toString(),
               'scheduleId': schedule.id.toString(),
+              'date': normalizedToday.toIso8601String(),
             };
           }
         }
@@ -104,14 +106,22 @@ class HomeWidgetService {
         firstSchedule.booksToRead,
       );
 
+      final versesPerDay = await firstSchedule.getVersesPerDay(bibleData);
+
       // Find first unread verse
-      for (final verseMap in allVersesMaps) {
+      for (int i = 0; i < allVersesMaps.length; i++) {
+        final verseMap = allVersesMaps[i];
         final verseKey =
             '${verseMap['book']}:${verseMap['chapter']}:${verseMap['verse']}';
         if (!readSet.contains(verseKey)) {
           final text = verseMap['text'] as String? ?? '';
           final reference =
               '${verseMap['book']} ${verseMap['chapter']}:${verseMap['verse']}';
+
+          // Calculate date for this verse
+          final dayIndex = (i / versesPerDay).floor();
+          final date = firstSchedule.startDate.add(Duration(days: dayIndex));
+
           return {
             'text': text,
             'reference': reference,
@@ -119,6 +129,7 @@ class HomeWidgetService {
             'chapter': verseMap['chapter'].toString(),
             'verse': verseMap['verse'].toString(),
             'scheduleId': firstSchedule.id.toString(),
+            'date': date.toIso8601String(),
           };
         }
       }
@@ -162,6 +173,10 @@ class HomeWidgetService {
         _scheduleIdKey,
         currentVerse['scheduleId'] ?? '',
       );
+      await HomeWidget.saveWidgetData<String>(
+        _verseDateKey,
+        currentVerse['date'] ?? '',
+      );
     } else {
       // No current verse found, show a default message
       await HomeWidget.saveWidgetData<String>(
@@ -173,6 +188,7 @@ class HomeWidgetService {
       await HomeWidget.saveWidgetData<String>(_verseChapterKey, '');
       await HomeWidget.saveWidgetData<String>(_verseNumKey, '');
       await HomeWidget.saveWidgetData<String>(_scheduleIdKey, '');
+      await HomeWidget.saveWidgetData<String>(_verseDateKey, '');
     }
     await HomeWidget.updateWidget(qualifiedAndroidName: _androidWidgetReceiver);
   }

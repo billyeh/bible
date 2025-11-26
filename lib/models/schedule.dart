@@ -162,6 +162,11 @@ extension ScheduleExtensions on Schedule {
     return Schedule._normalize(date).isBefore(endDate);
   }
 
+  bool isBeforeOrOnEndDate(DateTime date) {
+    return Schedule._normalize(date).isBefore(endDate) ||
+        Schedule._normalize(date).isAtSameMomentAs(endDate);
+  }
+
   double getTimeProgress(DateTime now) {
     final today = Schedule._normalize(now);
 

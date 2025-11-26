@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:isar/isar.dart';
 
-import 'package:bible/animated_tile.dart';
 import 'package:bible/models/schedule.dart';
 import 'package:bible/models/verse.dart';
 import 'package:bible/bible_data/bible_data.dart';
@@ -15,8 +14,27 @@ import 'package:bible/services/home_widget_service.dart';
 class ReadingPage extends StatefulWidget {
   final Schedule schedule;
   final BibleData bible;
+  final DateTime? initialDate;
 
-  const ReadingPage({super.key, required this.schedule, required this.bible});
+  const ReadingPage({
+    super.key,
+    required this.schedule,
+    required this.bible,
+    this.initialDate,
+  });
+
+  static String routeName(Schedule schedule, DateTime date) {
+    if (date.isBefore(schedule.startDate)) {
+      date = schedule.startDate;
+    }
+    if (date.isAfter(schedule.endDate)) {
+      date = schedule.endDate;
+    }
+
+    // Normalize date to remove time component for consistent routing
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+    return '/reading/${schedule.id}/${normalizedDate.toIso8601String()}';
+  }
 
   @override
   State<ReadingPage> createState() => _ReadingPageState();
@@ -45,8 +63,10 @@ class _ReadingPageState extends State<ReadingPage> {
         .map((v) => '${v.book}:${v.chapter}:${v.verse}')
         .toSet();
 
+    final start = widget.initialDate ?? DateTime.now();
+
     // Ensure selectedDate is within schedule
-    if (!widget.schedule.isAfterOrOnStartDate(DateTime.now())) {
+    if (!widget.schedule.isAfterOrOnStartDate(start)) {
       selectedDate = widget.schedule.startDate;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -58,7 +78,7 @@ class _ReadingPageState extends State<ReadingPage> {
         );
       });
     } else {
-      selectedDate = DateTime.now();
+      selectedDate = start;
     }
 
     _initialPageIndex = selectedDate
@@ -421,27 +441,23 @@ class VerseTile extends StatelessWidget {
       fontSize: textTheme.bodySmall?.fontSize,
     );
 
-    return AnimatedTile(
-      uniqueKey: '${verse['book']}-${verse['chapter']}-${verse['verse']}',
-      staggerIndex: verse['index'] ?? 0,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () => onToggle(!isRead),
-          onLongPress: onLongPress,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "${verse['book']} ${verse['chapter']}:${verse['verse']}",
-                  style: referenceTextStyle,
-                ),
-                Text("${verse['text']}", style: textStyle),
-              ],
-            ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => onToggle(!isRead),
+        onLongPress: onLongPress,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "${verse['book']} ${verse['chapter']}:${verse['verse']}",
+                style: referenceTextStyle,
+              ),
+              Text("${verse['text']}", style: textStyle),
+            ],
           ),
         ),
       ),

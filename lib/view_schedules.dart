@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:isar/isar.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:pocketbase/pocketbase.dart';
+import 'package:home_widget/home_widget.dart';
 
 import 'package:bible/main.dart';
 import 'package:bible/create_schedule.dart';
@@ -101,6 +102,10 @@ class _SchedulesPageState extends State<SchedulesPage> {
       await isar.schedules.delete(schedule.id);
     });
 
+    // Update widget with current verse after deleting schedule
+    if (Platform.isAndroid) {
+      HomeWidgetService.updateCurrentVerse();
+    }
     if (_schedules.isEmpty) {
       setState(() {});
     }
@@ -509,9 +514,14 @@ class _SchedulesPageState extends State<SchedulesPage> {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () async {
+          final date = DateTime.now();
+          final routeName = ReadingPage.routeName(s, date);
+          print('routeName: $routeName');
+
           await Navigator.push(
             context,
             MaterialPageRoute(
+              settings: RouteSettings(name: routeName),
               builder: (_) => ReadingPage(schedule: s, bible: bibleData),
             ),
           );
