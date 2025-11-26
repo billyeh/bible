@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:isar/isar.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:pocketbase/pocketbase.dart';
-import 'package:home_widget/home_widget.dart';
 
 import 'package:bible/main.dart';
 import 'package:bible/create_schedule.dart';

@@ -9,7 +9,6 @@ import 'package:bible/view_schedules.dart';
 import 'package:bible/services/home_widget_service.dart';
 
 import 'dart:async';
-import 'package:home_widget/home_widget.dart';
 import 'package:app_links/app_links.dart';
 import 'package:bible/reading.dart';
 import 'package:bible/bible_data/bible_data.dart';
@@ -42,7 +41,6 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> with RouteAware {
   late AppLinks _appLinks;
   StreamSubscription<Uri>? _linkSubscription;
-  String? _currentRouteName;
 
   @override
   void initState() {
@@ -120,35 +118,33 @@ class _MyAppState extends State<MyApp> with RouteAware {
     navigatorKey.currentState?.push(
       MaterialPageRoute(
         settings: RouteSettings(name: routeName),
-        builder:
-            (context) => ReadingPage(
-              schedule: schedule,
-                      bible: BibleData(),
-                      initialDate: date)));
+        builder: (context) => ReadingPage(
+          schedule: schedule,
+          bible: BibleData(),
+          initialDate: date,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: navigatorKey,
-      navigatorObservers: [
-        routeObserver,
-        _RouteTracker((routeName) {
-          _currentRouteName = routeName;
-        }),
-      ],
+      navigatorObservers: [routeObserver, _RouteTracker((routeName) {})],
       title: 'Bible Reading App',
 
       themeMode: ThemeMode.system,
 
       theme: ThemeData(
         brightness: Brightness.light,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xff1d7fff),
-          brightness: Brightness.light,
-        ).copyWith(
-          primary: const Color(0xff1d7fff), // 💡 force vibrant blue
-        ),
+        colorScheme:
+            ColorScheme.fromSeed(
+              seedColor: const Color(0xff1d7fff),
+              brightness: Brightness.light,
+            ).copyWith(
+              primary: const Color(0xff1d7fff), // 💡 force vibrant blue
+            ),
         fontFamily: 'Inter',
         useMaterial3: true,
       ),

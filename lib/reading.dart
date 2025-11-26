@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:isar/isar.dart';
 
 import 'package:bible/models/schedule.dart';
 import 'package:bible/models/verse.dart';
