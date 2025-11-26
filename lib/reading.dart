@@ -417,8 +417,8 @@ class VerseTile extends StatelessWidget {
         ) ??
         const TextStyle();
 
-    final boldTextStyle = textStyle.copyWith(
-      fontSize: textTheme.titleMedium?.fontSize,
+    final referenceTextStyle = textStyle.copyWith(
+      fontSize: textTheme.bodySmall?.fontSize,
     );
 
     return AnimatedTile(
@@ -437,9 +437,8 @@ class VerseTile extends StatelessWidget {
               children: [
                 Text(
                   "${verse['book']} ${verse['chapter']}:${verse['verse']}",
-                  style: boldTextStyle,
+                  style: referenceTextStyle,
                 ),
-                SizedBox(height: 8),
                 Text("${verse['text']}", style: textStyle),
               ],
             ),

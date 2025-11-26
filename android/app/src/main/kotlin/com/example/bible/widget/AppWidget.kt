@@ -61,19 +61,19 @@ class AppWidget : GlanceAppWidget() {
 
         // Theme-aware colors
         val backgroundColor = if (isDarkMode) {
-            Color(0xFF1E1E1E) // Dark background
+            Color(0xFF111318) // Dark background
         } else {
-            Color(0xFFFFFFFF) // Light background
+            Color(0xFFf9f9ff) // Light background
         }
 
         val textColor = if (isDarkMode) {
-            ColorProvider(Color(0xFFE0E0E0)) // Light text for dark background
+            ColorProvider(Color(0xFFe2e2e9)) // Light text for dark background
         } else {
-            ColorProvider(Color(0xFF000000)) // Dark text for light background
+            ColorProvider(Color(0xFF1a1b20)) // Dark text for light background
         }
 
         val textSize = if (verseText.length <= 300) {
-            16.sp
+            14.sp
         } else {
             12.sp
         }
@@ -91,8 +91,7 @@ class AppWidget : GlanceAppWidget() {
                         Text(
                             verseReference,
                             style = TextStyle(
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
                                 color = textColor,
                             ),
                             modifier = GlanceModifier.defaultWeight()
